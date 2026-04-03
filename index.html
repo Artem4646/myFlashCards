@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flash Pro</title>
+    <title>Quizlet Ultimate</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -25,20 +25,32 @@
 
         body { 
             background: var(--bg); color: var(--text); padding: 15px; 
-            transition: background 0.3s; overflow-x: hidden; min-height: 100vh;
+            transition: 0.3s; overflow-x: hidden; min-height: 100vh;
         }
 
-        /* UI Elements */
         header { max-width: 600px; margin: 0 auto 15px; display: flex; justify-content: space-between; align-items: center; }
         .logo { font-size: 1.4rem; font-weight: 700; color: var(--accent); cursor: pointer; }
 
-        .nav-bar { display: flex; gap: 8px; max-width: 600px; margin: 0 auto 20px; }
+        .nav-bar { display: flex; gap: 8px; max-width: 600px; margin: 0 auto 15px; }
         .nav-btn { 
             flex: 1; padding: 12px 5px; border-radius: 12px; border: none; 
             background: var(--surface); color: var(--text); font-weight: 600; 
             font-size: 0.8rem; cursor: pointer; border-bottom: 3px solid var(--border); 
         }
         .nav-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
+
+        /* Налаштування сторін */
+        .settings-bar { 
+            display: flex; gap: 5px; overflow-x: auto; padding-bottom: 10px; 
+            margin-bottom: 10px; scrollbar-width: none;
+        }
+        .settings-bar::-webkit-scrollbar { display: none; }
+        .chip { 
+            white-space: nowrap; padding: 8px 14px; background: var(--surface); 
+            border-radius: 20px; font-size: 0.75rem; border: 1px solid var(--border); 
+            color: var(--muted); cursor: pointer;
+        }
+        .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
 
         .screen { display: none; width: 100%; max-width: 600px; margin: 0 auto; animation: fadeIn 0.2s ease; }
         .screen.active { display: block; }
@@ -55,11 +67,10 @@
         }
         .card-back { transform: rotateY(180deg); border-color: var(--accent); color: var(--accent); }
 
-        /* Forms & Buttons */
         .input-ans { 
             width: 100%; padding: 16px; border-radius: 12px; border: 2px solid var(--border); 
             background: var(--surface); color: var(--text); margin-bottom: 12px; 
-            outline: none; font-size: 16px; /* Запобігає зуму на iOS */
+            outline: none; font-size: 16px;
         }
         .btn-main { 
             width: 100%; padding: 16px; background: var(--accent); color: white; 
@@ -85,10 +96,10 @@
 <body>
 
 <header>
-    <div class="logo" onclick="location.reload()">Flash</div>
+    <div class="logo" onclick="location.reload()">Quizlet</div>
     <div style="display:flex; gap:8px">
-        <button class="nav-btn" style="padding:8px 12px" onclick="exportData()" title="Експорт">⬇️</button>
-        <button class="nav-btn" style="padding:8px 12px" onclick="importData()" title="Імпорт">⬆️</button>
+        <button class="nav-btn" style="padding:8px 12px" onclick="exportData()">💾</button>
+        <button class="nav-btn" style="padding:8px 12px" onclick="importData()">📥</button>
         <button class="nav-btn" style="padding:8px 12px" onclick="toggleTheme()">🌓</button>
     </div>
 </header>
@@ -115,6 +126,12 @@
 </div>
 
 <div id="scr-study" class="screen">
+    <div class="settings-bar">
+        <div id="side-term" class="chip active" onclick="setSideMode('term')">🇬🇧 Спершу термін</div>
+        <div id="side-trans" class="chip" onclick="setSideMode('trans')">🇺🇦 Спершу переклад</div>
+        <div id="side-random" class="chip" onclick="setSideMode('random')">🔀 Мікс сторін</div>
+    </div>
+
     <div id="study-menu">
         <div class="mode-grid">
             <div class="mode-card" onclick="startMode('flip')">🃏<br>Картки</div>
@@ -165,30 +182,44 @@
 </div>
 
 <script>
-    let state = JSON.parse(localStorage.getItem('quiz_final_v1')) || { folders: [], cards: {}, theme: 'dark' };
+    let state = JSON.parse(localStorage.getItem('quiz_final_v2')) || { 
+        folders: [], cards: {}, theme: 'dark', sideMode: 'term' 
+    };
     let curFid = null, deck = [], idx = 0, mistakes = [], mode = '';
 
-    function save() { localStorage.setItem('quiz_final_v1', JSON.stringify(state)); }
+    function save() { localStorage.setItem('quiz_final_v2', JSON.stringify(state)); }
 
     function nav(s) {
         document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('scr-'+s).classList.add('active');
         document.getElementById('n-'+s).classList.add('active');
-        
         document.getElementById('n-editor').style.display = curFid ? 'block' : 'none';
         document.getElementById('n-study').style.display = curFid ? 'block' : 'none';
-        
         if(s === 'folders') renderFolders();
         if(s === 'editor') renderEditor();
         if(s === 'study') {
             document.getElementById('study-menu').style.display = 'block';
             document.getElementById('study-area').style.display = 'none';
             document.getElementById('study-result').style.display = 'none';
+            updateSideChips();
         }
     }
 
-    // Folders
+    function setSideMode(m) {
+        state.sideMode = m;
+        save();
+        updateSideChips();
+        if (document.getElementById('study-area').style.display === 'block') {
+            showCard(); // Оновити поточну картку під новий режим
+        }
+    }
+
+    function updateSideChips() {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        document.getElementById('side-' + state.sideMode).classList.add('active');
+    }
+
     function renderFolders() {
         const list = document.getElementById('folders-list');
         list.innerHTML = state.folders.map(f => `
@@ -198,6 +229,7 @@
             </div>
         `).join('');
     }
+
     function addFolder() {
         const n = prompt("Назва модуля:");
         if(!n) return;
@@ -207,7 +239,6 @@
         save(); renderFolders();
     }
 
-    // Editor
     function renderEditor() {
         document.getElementById('ed-name').textContent = state.folders.find(f => f.id === curFid).name;
         const list = document.getElementById('cards-list');
@@ -218,63 +249,78 @@
             </div>
         `).reverse().join('');
     }
+
     function addCard() {
-        const w = document.getElementById('in-w').value.trim();
-        const t = document.getElementById('in-t').value.trim();
+        const w = document.getElementById('in-w').value.trim(), t = document.getElementById('in-t').value.trim();
         if(!w || !t) return;
         state.cards[curFid].push({id: Date.now(), w, t});
         save(); renderEditor();
         document.getElementById('in-w').value = ''; document.getElementById('in-t').value = '';
     }
+
     function delCard(id) {
         state.cards[curFid] = state.cards[curFid].filter(c => c.id !== id);
         save(); renderEditor();
     }
 
-    // Study
     function startMode(m) {
         mode = m;
         deck = [...state.cards[curFid]].sort(() => Math.random() - 0.5);
-        if(deck.length === 0) return alert("Спочатку додайте слова!");
+        if(deck.length === 0) return alert("Додайте слова!");
         idx = 0; mistakes = [];
         document.getElementById('study-menu').style.display = 'none';
         document.getElementById('study-area').style.display = 'block';
         showCard();
     }
 
+    function getCardData() {
+        const c = deck[idx];
+        let isReversed = false;
+        
+        if (state.sideMode === 'trans') isReversed = true;
+        if (state.sideMode === 'random') isReversed = Math.random() > 0.5;
+
+        return {
+            q: isReversed ? c.t : c.w,
+            a: isReversed ? c.w : c.t
+        };
+    }
+
     function showCard() {
         if(idx >= deck.length) return finish();
         document.getElementById('pbar-fill').style.width = (idx / deck.length * 100) + '%';
         document.querySelectorAll('.mode-content').forEach(c => c.style.display = 'none');
-        const c = deck[idx];
+        
+        const data = getCardData();
 
         if(mode === 'flip') {
             document.getElementById('m-flip').style.display = 'block';
-            document.getElementById('q-flip').textContent = c.w;
-            document.getElementById('a-flip').textContent = c.t;
+            document.getElementById('q-flip').textContent = data.q;
+            document.getElementById('a-flip').textContent = data.a;
             document.querySelector('.card-inner').classList.remove('flipped');
         } else if(mode === 'learn') {
             document.getElementById('m-learn').style.display = 'block';
-            document.getElementById('q-learn').textContent = c.w;
-            let opts = [c.t];
-            let allTs = state.cards[curFid].map(x => x.t);
-            while(opts.length < 4 && allTs.length > opts.length) {
-                const r = allTs[Math.floor(Math.random()*allTs.length)];
+            document.getElementById('q-learn').textContent = data.q;
+            let opts = [data.a];
+            let allAs = state.cards[curFid].map(x => state.sideMode === 'trans' || (state.sideMode === 'random' && data.q === deck[idx].t) ? x.w : x.t);
+            while(opts.length < 4 && allAs.length > opts.length) {
+                const r = allAs[Math.floor(Math.random()*allAs.length)];
                 if(!opts.includes(r)) opts.push(r);
             }
             opts.sort(() => Math.random() - 0.5);
             document.getElementById('learn-options').innerHTML = opts.map(o => `
-                <button class="input-ans" style="text-align:left" onclick="checkLearn('${o}', '${c.t}')">${o}</button>
+                <button class="input-ans" style="text-align:left" onclick="checkLearn('${o}', '${data.a}')">${o}</button>
             `).join('');
         } else if(mode === 'write') {
             document.getElementById('m-write').style.display = 'block';
-            document.getElementById('q-write').textContent = c.w;
+            document.getElementById('q-write').textContent = data.q;
             document.getElementById('write-in').value = '';
             document.getElementById('write-msg').textContent = '';
             setTimeout(() => document.getElementById('write-in').focus(), 100);
+            window.currentCorrect = data.a;
         } else if(mode === 'test') {
             document.getElementById('m-test').style.display = 'block';
-            renderTest();
+            renderTest(data);
         }
     }
 
@@ -284,39 +330,38 @@
     }
 
     function checkLearn(picked, correct) {
-        if(picked === correct) { idx++; showCard(); }
-        else { alert("Неправильно. Правильна відповідь: " + correct); mistakes.push(deck[idx]); idx++; showCard(); }
+        if(picked.toLowerCase() === correct.toLowerCase()) { idx++; showCard(); }
+        else { alert("Правильна відповідь: " + correct); mistakes.push(deck[idx]); idx++; showCard(); }
     }
 
     function checkWrite() {
         const val = document.getElementById('write-in').value.trim().toLowerCase();
-        const correct = deck[idx].t.toLowerCase();
+        const correct = window.currentCorrect.toLowerCase();
         if(val === correct) { idx++; showCard(); }
         else { 
-            document.getElementById('write-msg').innerHTML = `<span style="color:var(--danger)">Помилка!</span> Правильно: ${deck[idx].t}`;
+            document.getElementById('write-msg').innerHTML = `Правильно: ${window.currentCorrect}`;
             mistakes.push(deck[idx]);
             setTimeout(() => { idx++; showCard(); }, 2000);
         }
     }
 
-    function renderTest() {
-        const c = deck[idx];
+    function renderTest(data) {
         const isChoice = Math.random() > 0.5;
         const cont = document.getElementById('test-q-container');
         if(isChoice) {
-            let opts = [c.t];
-            let allTs = state.cards[curFid].map(x => x.t);
-            while(opts.length < 4 && allTs.length > opts.length) {
-                const r = allTs[Math.floor(Math.random()*allTs.length)];
+            let opts = [data.a];
+            let allAs = state.cards[curFid].map(x => (data.q === deck[idx].t) ? x.w : x.t);
+            while(opts.length < 4 && allAs.length > opts.length) {
+                const r = allAs[Math.floor(Math.random()*allAs.length)];
                 if(!opts.includes(r)) opts.push(r);
             }
             opts.sort(() => Math.random() - 0.5);
-            cont.innerHTML = `<h3 style="text-align:center;margin-bottom:15px">Як перекладається "${c.w}"?</h3>` + 
-                opts.map(o => `<button class="input-ans" onclick="checkLearn('${o}', '${c.t}')">${o}</button>`).join('');
+            cont.innerHTML = `<h3>"${data.q}" — це...</h3>` + 
+                opts.map(o => `<button class="input-ans" onclick="checkLearn('${o}', '${data.a}')">${o}</button>`).join('');
         } else {
-            cont.innerHTML = `<h3 style="text-align:center;margin-bottom:15px">Напишіть переклад: "${c.w}"</h3>
+            cont.innerHTML = `<h3>Напишіть переклад: "${data.q}"</h3>
                 <input type="text" id="test-in" class="input-ans" autocomplete="off">
-                <button class="btn-main" onclick="checkLearn(document.getElementById('test-in').value.trim().toLowerCase(), '${c.t.toLowerCase()}')">Відповісти</button>`;
+                <button class="btn-main" onclick="checkLearn(document.getElementById('test-in').value.trim(), '${data.a}')">Відповісти</button>`;
         }
     }
 
@@ -328,21 +373,15 @@
         document.getElementById('res-desc').textContent = `Ви знаєте ${score}% модуля (${deck.length - mistakes.length} з ${deck.length})`;
     }
 
-    // Data Management
     function exportData() {
         const blob = new Blob([JSON.stringify(state)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quizlet_backup.json'; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quizlet_export.json'; a.click();
     }
     function importData() {
         const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
         inp.onchange = e => {
             const reader = new FileReader();
-            reader.onload = ev => { 
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    if(data.folders) { state = data; save(); location.reload(); }
-                } catch(err) { alert("Помилка файлу"); }
-            };
+            reader.onload = ev => { try { const d = JSON.parse(ev.target.result); if(d.folders) { state = d; save(); location.reload(); } } catch(e) { alert("Помилка"); } };
             reader.readAsText(e.target.files[0]);
         };
         inp.click();
@@ -353,7 +392,6 @@
         save();
     }
 
-    // Init
     if(state.theme === 'light') document.body.className = 'light-theme';
     renderFolders();
     document.addEventListener('keypress', e => { if(e.key === 'Enter' && mode === 'write') checkWrite(); });
