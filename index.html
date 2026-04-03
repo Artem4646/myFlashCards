@@ -336,6 +336,7 @@
         curFid = id;
         document.getElementById('editor-title').innerText = name;
         document.getElementById('study-title').innerText = name;
+        await loadCards();
         nav('study');
     }
 
