@@ -1,0 +1,15 @@
+{
+  "short_name": "FlashPro",
+  "name": "Flash Pro Cloud Cards",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968292.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0d0d0f",
+  "theme_color": "#c8f04c"
+}
