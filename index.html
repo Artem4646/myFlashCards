@@ -335,7 +335,7 @@
             cont.innerHTML = `
                 <p style="text-align:center; color:var(--muted); margin-bottom:15px">${idx+1}/${studyQueue.length}</p>
                 <div class="card-scene" id="swipe-zone">
-                    <div class="card-inner" id="card-obj" onclick="this.classList.toggle('flipped')">
+                    <div class="card-inner" id="card-obj">
                         <div class="card-face">${term}</div>
                         <div class="card-face card-back">${def}</div>
                     </div>
@@ -401,8 +401,20 @@
     function handleFlipResult(known) {
         if(!known) currentMistakes.push(studyQueue[idx]);
         const card = document.getElementById('card-obj');
-        card.style.transform = (known ? 'translateX(200px) rotate(20deg)' : 'translateX(-200px) rotate(-20deg)') + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
-        card.style.opacity = '0'; setTimeout(() => { idx++; renderStep(); }, 300);
+        if(!card) return;
+
+        const currentRotateY = card.classList.contains('flipped') ? ' rotateY(180deg)' : ' rotateY(0deg)';
+        const moveX = known ? 500 : -500;
+        const rotateZ = known ? 45 : -45;
+
+        card.style.transition = '0.5s ease-in';
+        card.style.transform = `translateX(${moveX}px) rotate(${rotateZ}deg)` + currentRotateY;
+        card.style.opacity = '0';
+
+        setTimeout(() => { 
+            idx++; 
+            renderStep(); 
+        }, 300);
     }
 
     function goBack() {
@@ -421,19 +433,61 @@
 
     function initSwipe() {
         const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
-        if(!zone) return;
-        zone.ontouchstart = e => { startX = e.touches[0].clientX; if(card) card.style.transition = '0s'; };
+        if(!zone || !card) return;
+
+        let startTime, startY, isMoving = false;
+
+        zone.ontouchstart = e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            startTime = Date.now();
+            card.style.transition = '0s'; // Вимикаємо анімацію під час руху пальцем
+            isMoving = false;
+        };
+
         zone.ontouchmove = e => {
-            if(!card) return;
             let x = e.touches[0].clientX - startX;
-            card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
+            let y = e.touches[0].clientY - startY;
+            
+            // Якщо рухаємо пальцем більше ніж на 10px, вважаємо це свайпом
+            if (Math.abs(x) > 10) {
+                isMoving = true;
+                let currentRotateY = card.classList.contains('flipped') ? ' rotateY(180deg)' : ' rotateY(0deg)';
+                card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + currentRotateY;
+            }
         };
+
         zone.ontouchend = e => {
-            if(!card) return;
             let x = e.changedTouches[0].clientX - startX;
-            if(Math.abs(x) > 120) handleFlipResult(x > 0);
-            else { card.style.transition = '0.3s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; }
+            let duration = Date.now() - startTime;
+
+            // Логіка ПЕРЕВОРОТУ: якщо рух був мінімальний і короткий
+            if (!isMoving && duration < 250) {
+                flipCard(card);
+                return;
+            }
+
+            // Логіка СВАЙПУ (завершення)
+            if (Math.abs(x) > 120) {
+                handleFlipResult(x > 0);
+            } else {
+                // Повертаємо картку в центр, зберігаючи її поточну сторону
+                card.style.transition = '0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : 'rotateY(0deg)';
+            }
         };
+
+        // Для десктопа (клік мишкою)
+        zone.onclick = () => {
+            if (!isMoving) flipCard(card);
+        };
+    }
+
+    function flipCard(card) {
+        card.style.transition = '0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        card.classList.toggle('flipped');
+        // Явно вказуємо кут, щоб JS не "затирав" стан перевороту
+        card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : 'rotateY(0deg)';
     }
 
     function openPopup(t, b, cb) {
