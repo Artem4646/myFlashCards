@@ -335,7 +335,7 @@
             cont.innerHTML = `
                 <p style="text-align:center; color:var(--muted); margin-bottom:15px">${idx+1}/${studyQueue.length}</p>
                 <div class="card-scene" id="swipe-zone">
-                    <div class="card-inner" id="card-obj" onclick="this.classList.toggle('flipped')">
+                    <div class="card-inner" id="card-obj" onclick="if(window.innerWidth > 768) this.classList.toggle('flipped')">
                         <div class="card-face">${term}</div>
                         <div class="card-face card-back">${def}</div>
                     </div>
@@ -422,18 +422,51 @@
 
     function initSwipe() {
         const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
-        if(!zone) return;
-        zone.ontouchstart = e => { startX = e.touches[0].clientX; if(card) card.style.transition = '0s'; };
-        zone.ontouchmove = e => {
-            if(!card) return;
-            let x = e.touches[0].clientX - startX;
-            card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
+        if(!zone || !card) return;
+
+        let startTime, startX, startY;
+
+        zone.ontouchstart = e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            startTime = new Date().getTime();
+            card.style.transition = '0s';
         };
+
+        zone.ontouchmove = e => {
+            let x = e.touches[0].clientX - startX;
+            let y = e.touches[0].clientY - startY;
+            
+            // Запобігаємо скролу сторінки, коли рухаємо картку
+            if (Math.abs(x) > Math.abs(y)) {
+                card.style.transform = `translateX(${x}px) rotate(${x/15}deg) ${card.classList.contains('flipped') ? 'rotateY(180deg)' : ''}`;
+            }
+        };
+
         zone.ontouchend = e => {
-            if(!card) return;
-            let x = e.changedTouches[0].clientX - startX;
-            if(Math.abs(x) > 120) handleFlipResult(x > 0);
-            else { card.style.transition = '0.3s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; }
+            let distX = e.changedTouches[0].clientX - startX;
+            let distY = e.changedTouches[0].clientY - startY;
+            let elapsed = new Date().getTime() - startTime;
+
+            // Логіка визначення тапу (кліку) на мобільному
+            // Якщо палець був на екрані менше 250мс і майже не рухався
+            if (elapsed < 250 && Math.abs(distX) < 10 && Math.abs(distY) < 10) {
+                card.style.transition = '0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                card.classList.toggle('flipped');
+                // Повертаємо коректну трансформацію після тогла класу
+                setTimeout(() => {
+                    card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : '';
+                }, 10);
+                return;
+            }
+
+            // Логіка свайпу
+            if(Math.abs(distX) > 120) {
+                handleFlipResult(distX > 0);
+            } else {
+                card.style.transition = '0.3s';
+                card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : '';
+            }
         };
     }
 
