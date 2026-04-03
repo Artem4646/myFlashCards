@@ -61,6 +61,22 @@
             background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             letter-spacing: -1px; 
         }
+
+        /* Стилі для результатів у режимі вибору */
+.input-ans.correct { 
+    background: var(--success) !important; 
+    color: white !important; 
+    border-color: var(--success); 
+}
+.input-ans.wrong { 
+    background: var(--danger) !important; 
+    color: white !important; 
+    border-color: var(--danger); 
+}
+
+/* Кольорові контури для карток при свайпі */
+.card-inner.swipe-right { border: 4px solid var(--success) !important; }
+.card-inner.swipe-left { border: 4px solid var(--danger) !important; }
         
         .nav-bar { 
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
@@ -461,9 +477,35 @@
     }
 
     function checkChoice(user, cor) {
-        if(user !== cor) { mistakes.push(studyQueue[idx]); openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); }
-        else { idx++; renderStep(); }
+    const buttons = document.querySelectorAll('#mode-container .input-ans');
+    let selectedBtn;
+    
+    buttons.forEach(btn => {
+        if (btn.innerText === user) selectedBtn = btn;
+    });
+
+    if (user === cor) {
+        selectedBtn.classList.add('correct');
+        setTimeout(() => {
+            idx++;
+            renderStep();
+        }, 600); // пауза, щоб побачити зелений колір
+    } else {
+        selectedBtn.classList.add('wrong');
+        // Також підсвітимо правильний варіант зеленим
+        buttons.forEach(btn => {
+            if (btn.innerText === cor) btn.classList.add('correct');
+        });
+        
+        setTimeout(() => {
+            mistakes.push(studyQueue[idx]);
+            openPopup("Помилка", `Правильно: ${cor}`, () => { 
+                idx++; 
+                renderStep(); 
+            });
+        }, 800);
     }
+}
 
     function checkWrite(cor) {
         const val = document.getElementById('q-input').value.trim().toLowerCase();
@@ -472,19 +514,39 @@
     }
 
     function initSwipe() {
-        const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
-        if(!zone) return;
-        zone.ontouchstart = e => { startX = e.touches[0].clientX; card.style.transition = '0s'; };
-        zone.ontouchmove = e => {
-            let x = e.touches[0].clientX - startX;
-            card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
-        };
-        zone.ontouchend = e => {
-            let x = e.changedTouches[0].clientX - startX;
-            if(Math.abs(x) > 120) handleFlipResult(x > 0);
-            else { card.style.transition = '0.3s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; }
-        };
-    }
+    const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
+    if(!zone) return;
+    zone.ontouchstart = e => { 
+        startX = e.touches[0].clientX; 
+        card.style.transition = '0s'; 
+    };
+    zone.ontouchmove = e => {
+        let x = e.touches[0].clientX - startX;
+        card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
+        
+        // Додаємо класи кольору залежно від напрямку
+        if (x > 50) {
+            card.classList.add('swipe-right');
+            card.classList.remove('swipe-left');
+        } else if (x < -50) {
+            card.classList.add('swipe-left');
+            card.classList.remove('swipe-right');
+        } else {
+            card.classList.remove('swipe-left', 'swipe-right');
+        }
+    };
+    zone.ontouchend = e => {
+        let x = e.changedTouches[0].clientX - startX;
+        card.classList.remove('swipe-left', 'swipe-right'); // Прибираємо колір після відпускання
+        
+        if(Math.abs(x) > 120) {
+            handleFlipResult(x > 0);
+        } else { 
+            card.style.transition = '0.3s'; 
+            card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; 
+        }
+    };
+}
 
     function openPopup(t, b, cb, isConfirm = false) {
         document.getElementById('m-title').innerText = t;
