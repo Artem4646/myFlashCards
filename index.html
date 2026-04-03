@@ -44,6 +44,7 @@
         .input-ans:focus { border-color: var(--accent); }
 
         .btn-main { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 18px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-main.secondary { background: var(--surface-h); color: var(--text); }
         .btn-main.danger { background: var(--danger); }
         .btn-main.success { background: var(--success); }
 
@@ -90,7 +91,10 @@
 
 <header>
     <div class="logo">FLASHCLOUD</div>
-    <button class="nav-btn" style="padding:10px; border-radius: 50%; background: var(--surface);" onclick="toggleTheme()">🌓</button>
+    <div style="display:flex; gap:10px">
+        <button class="nav-btn" style="padding:10px; border-radius: 50%; background: var(--surface);" onclick="toggleTheme()">🌓</button>
+        <button id="logout-btn" class="nav-btn" style="padding:10px; border-radius: 50%; background: var(--surface); display:none" onclick="auth.signOut()">🚪</button>
+    </div>
 </header>
 
 <div id="scr-auth" class="screen active">
@@ -163,8 +167,16 @@
     }
 
     auth.onAuthStateChanged(user => {
-        if(user) { document.getElementById('nav-container').style.display = 'flex'; nav('folders'); }
-        else showScreen('scr-auth');
+        if(user) { 
+            document.getElementById('nav-container').style.display = 'flex'; 
+            document.getElementById('logout-btn').style.display = 'block';
+            nav('folders'); 
+        }
+        else {
+            document.getElementById('nav-container').style.display = 'none';
+            document.getElementById('logout-btn').style.display = 'none';
+            showScreen('scr-auth');
+        }
     });
 
     async function handleAuth() {
@@ -176,7 +188,7 @@
         if(!curFid && (s==='editor'||s==='study')) return nav('folders');
         showScreen('scr-'+s);
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('n-'+s).classList.add('active');
+        if(document.getElementById('n-'+s)) document.getElementById('n-'+s).classList.add('active');
         if(s==='folders') loadFolders();
         if(s==='editor') loadCards();
         if(s==='study') { document.getElementById('study-menu').style.display='block'; document.getElementById('study-area').style.display='none'; }
@@ -235,7 +247,6 @@
                     <button class="btn-main danger" style="flex:1" onclick="nextCard('wrong')">← Не знаю</button>
                     <button class="btn-main success" style="flex:1" onclick="nextCard('correct')">Знаю →</button>
                 </div>
-                <p style="text-align:center; color:var(--muted); margin-top:15px; font-size:0.8rem" class="desktop-controls">Або використовуй стрілки на клавіатурі</p>
             `;
             initSwipe();
         } else {
@@ -252,12 +263,10 @@
         const zone = document.getElementById('swipe-zone');
         const card = document.getElementById('card-obj');
         if(!zone || !card) return;
-
         zone.className = type === 'correct' ? 'card-scene swipe-correct' : 'card-scene swipe-wrong';
         card.style.transition = '0.4s';
         card.style.transform = (type === 'correct' ? 'translateX(200px) rotate(20deg)' : 'translateX(-200px) rotate(-20deg)') + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
         card.style.opacity = '0';
-        
         setTimeout(() => { idx++; renderStep(); }, 300);
     }
 
@@ -276,12 +285,11 @@
         });
     }
 
-    // Керування клавіатурою
     window.addEventListener('keydown', e => {
         if(currentMode === 'flip' && document.getElementById('study-area').style.display !== 'none') {
             if(e.key === 'ArrowLeft') nextCard('wrong');
             if(e.key === 'ArrowRight') nextCard('correct');
-            if(e.key === ' ') document.getElementById('card-obj').classList.toggle('flipped');
+            if(e.key === ' ') { e.preventDefault(); document.getElementById('card-obj').classList.toggle('flipped'); }
         }
     });
 
