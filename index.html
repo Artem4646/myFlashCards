@@ -11,451 +11,172 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <style>
-        :root {
-            /* New Sophisticated Dark Palette */
-            --bg: #030712;
-            --surface: rgba(17, 24, 39, 0.7);
-            --surface-h: rgba(31, 41, 55, 0.9);
-            --text: #f3f4f6;
-            --muted: #9ca3af;
-            
-            /* Neon Gradient Accent */
-            --accent-start: #6366f1;
-            --accent-end: #a855f7;
-            --accent: linear-gradient(135deg, var(--accent-start) 0%, var(--accent-end) 100%);
-            --accent-solid: #818cf8;
-            
-            --border: rgba(255, 255, 255, 0.06);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            
-            --danger: #ef4444;
-            --danger-glow: rgba(239, 68, 68, 0.3);
-            --success: #10b981;
-            --success-glow: rgba(16, 185, 129, 0.3);
-            
-            --radius-lg: 28px;
-            --radius-md: 18px;
-            --radius-sm: 12px;
-            
-            --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-            --shadow-neon: 0 0 15px -1px rgba(99, 102, 241, 0.3);
-            
-            --font: 'Plus Jakarta Sans', sans-serif;
-        }
+    :root {
+        --bg: #030712;
+        --surface: rgba(17, 24, 39, 0.7);
+        --surface-h: rgba(31, 41, 55, 0.9);
+        --text: #f3f4f6;
+        --muted: #9ca3af;
+        --accent: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        --accent-solid: #818cf8;
+        --border: rgba(255, 255, 255, 0.06);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --danger: #ef4444;
+        --radius-lg: 20px;
+        --radius-md: 14px;
+        --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    }
 
-        body.light-theme {
-            --bg: #f9fafb;
-            --surface: rgba(255, 255, 255, 0.8);
-            --surface-h: rgba(243, 244, 246, 0.9);
-            --text: #111827;
-            --muted: #6b7280;
-            --border: rgba(0, 0, 0, 0.05);
-            --glass-border: rgba(0, 0, 0, 0.06);
-            --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
-            --shadow-neon: 0 0 15px -1px rgba(99, 102, 241, 0.1);
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
 
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-            font-family: var(--font); 
-            -webkit-tap-highlight-color: transparent; 
-            outline: none;
-        }
-        
-        body { 
-            background: var(--bg); 
-            background-image: 
-                radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.15), transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(168, 85, 247, 0.15), transparent 40%);
-            color: var(--text); 
-            padding-bottom: 120px; 
-            min-height: 100vh; 
-            transition: background 0.4s, color 0.4s; 
-            overflow-x: hidden; 
-            letter-spacing: -0.01em;
-        }
+    body { 
+        background: var(--bg); 
+        color: var(--text); 
+        /* Адаптивний відступ знизу: на мобільних під SafeArea, на ПК — стандартний */
+        padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
+        min-height: 100vh;
+        font-size: 15px;
+        line-height: 1.4;
+    }
 
-        /* Typography */
-        h1, h2, h3 { font-weight: 800; letter-spacing: -0.03em; }
-        h2 { font-size: 1.75rem; margin-bottom: 0.5rem; }
-        p { color: var(--muted); line-height: 1.5; }
+    /* --- LAYOUT --- */
+    header { 
+        max-width: 800px; /* Трохи ширше для ПК */
+        margin: 0 auto; 
+        padding: calc(12px + env(safe-area-inset-top)) 20px 12px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        position: sticky; 
+        top: 0; 
+        z-index: 100;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        background: rgba(3, 7, 18, 0.7);
+    }
 
-        /* Header */
-        header { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            background: rgba(3, 7, 18, 0.5);
-        }
-        body.light-theme header { background: rgba(249, 250, 251, 0.5); }
+    .screen { 
+        max-width: 600px; /* Оптимальна ширина для читання на ПК */
+        margin: 0 auto; 
+        padding: 20px; 
+        animation: fadeIn 0.4s ease-out;
+    }
 
-        .logo { 
-            font-size: 1.5rem; 
-            font-weight: 800; 
-            background: var(--accent); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-            letter-spacing: -0.04em;
-        }
-        
-        /* Navigation */
-        .nav-bar { 
-            position: fixed; 
-            bottom: 30px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: calc(100% - 40px); 
-            max-width: 400px; 
-            background: var(--surface); 
-            padding: 8px; 
-            border-radius: 200px; 
-            border: 1px solid var(--glass-border); 
-            display: none; 
-            gap: 5px; 
-            box-shadow: var(--shadow-card); 
-            z-index: 1000; 
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-        .nav-btn { 
-            flex: 1; 
-            padding: 14px 10px; 
-            border-radius: 200px; 
-            border: none; 
-            background: transparent; 
-            color: var(--muted); 
-            font-weight: 700; 
-            font-size: 0.85rem; 
-            cursor: pointer; 
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-        .nav-btn i { font-size: 1.1rem; }
-        .nav-btn.active { 
-            background: var(--surface-h); 
-            color: var(--text); 
-            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
-        }
-        body.light-theme .nav-btn.active {
-            box-shadow: inset 0 1px 1px rgba(0,0,0,0.02), 0 2px 5px rgba(0,0,0,0.05);
-        }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Screens & Layout */
-        .screen { 
-            display: none; 
-            width: 100%; 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            animation: fadeIn slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1); 
-        }
-        .screen.active { display: block; }
+    /* --- NAVIGATION --- */
+    .nav-bar { 
+        position: fixed; 
+        bottom: calc(20px + env(safe-area-inset-bottom)); 
+        left: 50%; 
+        transform: translateX(-50%); 
+        width: 90%; 
+        max-width: 400px; /* Обмежуємо ширину на ПК */
+        background: var(--surface-h); 
+        padding: 6px; 
+        border-radius: 40px; 
+        border: 1px solid var(--glass-border); 
+        display: flex; 
+        gap: 5px; 
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+        z-index: 1000; 
+        backdrop-filter: blur(20px);
+    }
 
-        @keyframes slideUp { from { transform: translateY(20px); } to { transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .nav-btn { 
+        flex: 1; 
+        padding: 12px 5px; 
+        border-radius: 35px; 
+        border: none; 
+        background: transparent; 
+        color: var(--muted); 
+        font-weight: 600; 
+        font-size: 0.8rem; 
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex; flex-direction: column; align-items: center; gap: 3px;
+    }
+    .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-btn.active { background: var(--accent); color: #fff; }
 
-        .section-header {
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    /* --- STUDY MODE --- */
+    .study-grid { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 15px; 
+    }
 
-        /* Inputs */
-        .input-group { margin-bottom: 15px; }
-        .input-ans { 
-            width: 100%; 
-            padding: 16px 20px; 
-            border-radius: var(--radius-md); 
-            border: 1px solid var(--border); 
-            background: var(--surface); 
-            color: var(--text); 
-            font-size: 1rem; 
-            font-weight: 500;
-            transition: 0.3s; 
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .input-ans:focus { 
-            border-color: var(--accent-solid); 
+    /* На ПК робимо 4 колонки, якщо екран дозволяє */
+    @media (min-width: 600px) {
+        .study-grid { grid-template-columns: repeat(2, 1fr); }
+        .screen { max-width: 700px; }
+    }
+
+    .study-card { 
+        padding: 25px 15px; 
+        background: var(--surface); 
+        border-radius: var(--radius-lg); 
+        border: 1px solid var(--border);
+        transition: 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+        cursor: pointer;
+        text-align: center;
+    }
+    .study-card:hover { 
+        transform: translateY(-5px); 
+        background: var(--surface-h);
+        border-color: var(--accent-solid);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+
+    /* --- FLIP CARD (Центрування на ПК) --- */
+    .card-scene { 
+        max-width: 450px; 
+        height: 320px; 
+        margin: 0 auto 20px; 
+        perspective: 1000px; 
+    }
+
+    .study-controls {
+        display: grid;
+        grid-template-columns: 80px 1fr;
+        gap: 12px;
+        max-width: 450px;
+        margin: 0 auto;
+    }
+
+    /* --- ПК ОПТИМІЗАЦІЯ (Hover ефекти) --- */
+    @media (hover: hover) {
+        .item-row:hover {
             background: var(--surface-h);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: rgba(255,255,255,0.15);
+            padding-left: 22px; /* Ефект зміщення при наведенні */
         }
-        .input-ans.correct { 
-            border-color: var(--success); 
-            background-color: rgba(16, 185, 129, 0.1);
-            color: var(--success);
+        .btn-main:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
         }
-        .input-ans.wrong { 
-            border-color: var(--danger); 
-            background-color: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-        }
+    }
 
-        /* Buttons */
-        .btn-main { 
-            width: 100%; 
-            padding: 16px 20px; 
-            background: var(--accent); 
-            color: white; 
-            border: none; 
-            border-radius: var(--radius-md); 
-            font-weight: 700; 
-            font-size: 1rem; 
-            cursor: pointer; 
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 10px; 
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-main::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(rgba(255,255,255,0.1), transparent);
-            opacity: 0;
-            transition: 0.3s;
-        }
-        .btn-main:hover::after { opacity: 1; }
-        .btn-main:active { 
-            transform: translateY(1px) scale(0.98); 
-            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
-        }
-        
-        .btn-main.secondary { 
-            background: var(--surface-h); 
-            color: var(--text); 
-            box-shadow: none; 
-            border: 1px solid var(--border); 
-        }
-        .btn-main.secondary:active { background: var(--surface); border-color: var(--glass-border); }
+    /* --- МОБІЛЬНА ОПТИМІЗАЦІЯ --- */
+    @media (max-width: 480px) {
+        .study-grid { grid-template-columns: 1fr 1fr; }
+        h2 { font-size: 1.2rem; }
+        .card-scene { height: 280px; }
+    }
+        .study-controls {
+    display: grid;
+    grid-template-columns: 70px 1fr; /* Вузька колонка для Назад, широка для решти */
+    gap: 12px;
+    margin-top: 15px;
+    align-items: center;
+}
 
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); box-shadow: none;}
-        .btn-danger:active { background: rgba(239, 68, 68, 0.2); }
-
-        .btn-icon {
-            width: 45px; height: 45px;
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            background: var(--surface); border: 1px solid var(--border);
-            color: var(--muted); cursor: pointer; transition: 0.3s;
-            font-size: 1.1rem;
-        }
-        .btn-icon:hover { background: var(--surface-h); color: var(--text); border-color: var(--glass-border); }
-
-        /* Item Rows */
-        .item-list { display: flex; flex-direction: column; gap: 10px; }
-        .item-row { 
-            background: var(--surface); 
-            padding: 16px 20px; 
-            border-radius: var(--radius-md); 
-            border: 1px solid var(--border); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            transition: 0.3s;
-            animation: fadeIn 0.4s ease;
-        }
-        .item-row:hover { 
-            border-color: rgba(255,255,255,0.12);
-            background: var(--surface-h);
-            transform: translateY(-2px);
-        }
-        body.light-theme .item-row { box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        body.light-theme .item-row:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-
-        /* Side Picker */
-        .side-picker { 
-            background: var(--surface); 
-            padding: 5px; 
-            border-radius: 200px; 
-            margin-bottom: 25px; 
-            display: flex; 
-            gap: 2px; 
-            border: 1px solid var(--border);
-        }
-        .side-option { 
-            flex: 1; 
-            padding: 12px; 
-            border-radius: 200px; 
-            cursor: pointer; 
-            text-align: center; 
-            font-size: 0.85rem; 
-            font-weight: 700; 
-            color: var(--muted); 
-            transition: 0.3s; 
-        }
-        .side-option.active { 
-            background: var(--accent); 
-            color: white; 
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2);
-        }
-
-        /* Study Grid */
-        .study-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .study-card { 
-            background: var(--surface); 
-            padding: 30px 20px; 
-            border-radius: var(--radius-lg); 
-            border: 1px solid var(--border); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 15px; 
-            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            cursor: pointer; 
-            text-align: center;
-            box-shadow: var(--shadow-card);
-        }
-        .study-card:hover { 
-            border-color: var(--accent-solid);
-            transform: translateY(-5px) scale(1.02);
-            background: var(--surface-h);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), var(--shadow-neon);
-        }
-        .study-card span { font-size: 2.5rem; filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5)); }
-        .study-card b { font-weight: 700; font-size: 1.1rem; color: var(--text); }
-
-        /* FLIP CARD VISUALS */
-        .card-scene { 
-            width: 100%; 
-            height: 380px; 
-            perspective: 1500px; 
-            margin-bottom: 30px; 
-            position: relative;
-        }
-        .card-inner { 
-            width: 100%; 
-            height: 100%; 
-            position: relative; 
-            transform-style: preserve-3d; 
-            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); 
-            cursor: pointer; 
-            border-radius: var(--radius-lg);
-        }
-        .card-inner.flipped { transform: rotateY(180deg); }
-
-        .card-face { 
-            position: absolute; 
-            inset: 0; 
-            backface-visibility: hidden; 
-            -webkit-backface-visibility: hidden;
-            border-radius: var(--radius-lg); 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            padding: 40px; 
-            background: #111827; /* Solid color for backface visibility fix */
-            text-align: center; 
-            font-size: 2.2rem; 
-            font-weight: 800; 
-            border: 2px solid var(--glass-border); 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05);
-            letter-spacing: -0.04em;
-            color: var(--text);
-        }
-        body.light-theme .card-face { 
-            background: white; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-            border-color: rgba(0,0,0,0.05);
-        }
-
-        /* Subtle glow based on card side */
-        .card-scene::before {
-            content: ''; position: absolute; inset: 20px;
-            border-radius: var(--radius-lg);
-            background: var(--accent);
-            filter: blur(50px); opacity: 0.15; transition: 0.5s; z-index: -1;
-        }
-
-        .card-inner:not(.flipped) .card-face:not(.card-back) {
-            border-color: rgba(168, 85, 247, 0.2);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 15px rgba(168, 85, 247, 0.15);
-        }
-
-        .card-back { 
-            transform: rotateY(180deg); 
-            background: var(--accent); 
-            color: white; 
-            border: none; 
-            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.3);
-        }
-        .card-back .card-label { color: rgba(255,255,255,0.7); }
-
-        .card-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--muted);
-            margin-bottom: 15px;
-            position: absolute;
-            top: 30px;
-        }
-
-        /* Modal / Popup */
-        #modal-overlay { 
-            position: fixed; 
-            inset: 0; 
-            background: rgba(0, 3, 10, 0.8); 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 3000; 
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            padding: 20px;
-        }
-        .modal { 
-            background: #111827;
-            padding: 35px; 
-            border-radius: var(--radius-lg); 
-            width: 100%; 
-            max-width: 400px; 
-            text-align: center; 
-            border: 1px solid var(--glass-border); 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-        /* Mobile Optimization for Flip Buttons */
-        @media (max-width: 768px) {
-            .flip-btns {
-                position: fixed;
-                bottom: 110px; /* Above nav bar */
-                left: 20px; right: 20px;
-                display: flex; gap: 15px;
-                z-index: 900;
-            }
-            .flip-btns .btn-main { padding: 20px; font-size: 1.2rem; }
-            #scr-study #study-area { padding-bottom: 80px; }
-            .card-scene { height: 320px; }
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--surface-h); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-    </style>
+.btn-back {
+    background: var(--surface-h) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+}
+</style>
 </head>
 <body>
 
@@ -772,80 +493,99 @@
     }
 
     function renderStep() {
-        const cont = document.getElementById('mode-container');
-        if(idx >= studyQueue.length) {
-            let retryBtn = '';
-            if(currentMistakes.length > 0) {
-                retryBtn = `<button class="btn-main" style="margin-top:15px; background:var(--danger)" onclick="startMode('${currentMode}', true)">🔄 Вчити помилки (${currentMistakes.length})</button>`;
-            }
-            cont.innerHTML = `<div style="text-align:center; padding:50px 0; animation: modalIn 0.4s ease;">
-                <span style="font-size:4rem">🎉</span>
-                <h2 style="margin-top:20px">Чудова робота!</h2>
-                <p>Раунд завершено. Помилок: ${currentMistakes.length}</p>
-                ${retryBtn}
-                <button class="btn-main secondary" style="margin-top:15px" onclick="nav('study')">До меню навчання</button></div>`;
-            return;
+    const cont = document.getElementById('mode-container');
+    if(idx >= studyQueue.length) {
+        let retryBtn = '';
+        if(currentMistakes.length > 0) {
+            retryBtn = `<button class="btn-main" style="margin-top:15px; background:var(--danger)" onclick="startMode('${currentMode}', true)">🔄 Вчити помилки (${currentMistakes.length})</button>`;
         }
-        
-        const card = studyQueue[idx];
-        let term = card.term, def = card.def;
+        cont.innerHTML = `<div style="text-align:center; padding:50px 0; animation: modalIn 0.4s ease;">
+            <span style="font-size:4rem">🎉</span>
+            <h2 style="margin-top:20px">Чудова робота!</h2>
+            <p>Раунд завершено. Помилок: ${currentMistakes.length}</p>
+            ${retryBtn}
+            <button class="btn-main secondary" style="margin-top:15px" onclick="nav('study')">До меню навчання</button></div>`;
+        return;
+    }
+    
+    const card = studyQueue[idx];
+    let term = card.term, def = card.def;
 
-        // Determine Direction based on settings
-        const isOriginal = (side === 'term') || (side === 'rand' && Math.random() > 0.5);
-        if(!isOriginal && side !== 'term') [term, def] = [def, term];
-        if(side === 'def') [term, def] = [card.def, card.term];
+    const isOriginal = (side === 'term') || (side === 'rand' && Math.random() > 0.5);
+    if(!isOriginal && side !== 'term') [term, def] = [def, term];
+    if(side === 'def') [term, def] = [card.def, card.term];
 
-        if(currentMode === 'flip') {
-            cont.innerHTML = `
-                <p style="text-align:center; color:var(--muted); margin-bottom:15px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
-                <div class="card-scene" id="swipe-zone">
-                    <div class="card-inner" id="card-obj" onclick="if(window.innerWidth > 768) this.classList.toggle('flipped')">
-                        <div class="card-face">
-                            <div class="card-label">Термін</div>
-                            ${term}
-                        </div>
-                        <div class="card-face card-back">
-                            <div class="card-label">Переклад</div>
-                            ${def}
-                        </div>
+    // Кнопка "Назад" (відображається тільки якщо ми не на першому кроці)
+    const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
+
+    if(currentMode === 'flip') {
+        cont.innerHTML = `
+            <p style="text-align:center; color:var(--muted); margin-bottom:15px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
+            <div class="card-scene" id="swipe-zone">
+                <div class="card-inner" id="card-obj" onclick="if(window.innerWidth > 768) this.classList.toggle('flipped')">
+                    <div class="card-face">
+                        <div class="card-label">Термін</div>
+                        ${term}
+                    </div>
+                    <div class="card-back card-face">
+                        <div class="card-label">Переклад</div>
+                        ${def}
                     </div>
                 </div>
-                <div class="flip-btns">
-                    <button class="btn-main secondary" style="color:var(--danger); flex:1" onclick="handleFlipResult(false)">❌ Не знаю</button>
-                    <button class="btn-main" style="background:var(--success); flex:1" onclick="handleFlipResult(true)">✅ Знаю</button>
-                </div>`;
-            initSwipe();
-        } else if(currentMode === 'learn' || currentMode === 'test') {
-            // LEARN / TEST VISUALS
-            const correctAns = def;
-            const isDefSide = deck.some(d => d.def === correctAns);
-            const pool = isDefSide ? deck.map(d => d.def) : deck.map(d => d.term);
-            let others = pool.filter(v => v !== correctAns);
-            let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
-            
-            cont.innerHTML = `
-                <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px; box-shadow:var(--shadow-card)">
-                    <p style="text-transform:uppercase; font-size:0.75rem; letter-spacing:0.1em; font-weight:700; color:var(--accent-solid); margin-bottom:10px">Як перекладається?</p>
-                    <h2 style="font-size:2rem; letter-spacing:-0.03em">${term}</h2>
+            </div>
+            <div class="study-controls">
+                ${backBtn}
+                <div class="flip-btns" style="display:flex; gap:10px; width:100%">
+                    <button class="btn-main secondary" style="color:var(--danger); flex:1" onclick="handleFlipResult(false)">❌</button>
+                    <button class="btn-main" style="background:var(--success); flex:1" onclick="handleFlipResult(true)">✅</button>
                 </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px">
-                ${opts.map(o => `<button class="btn-main secondary" style="padding:20px; height:auto; justify-content:center; text-align:center;" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\")}')">${o}</button>`).join('')}
-                </div>`;
-        } else {
-            // WRITE MODE VISUALS
-            cont.innerHTML = `
-                <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px; box-shadow:var(--shadow-card)">
-                    <h2 style="font-size:2rem; letter-spacing:-0.03em">${term}</h2>
-                </div>
-                <div class="input-group">
-                    <input type="text" id="q-input" class="input-ans" placeholder="Твій переклад..." autocomplete="off">
-                </div>
-                <button class="btn-main" onclick="checkWrite('${def.replace(/'/g, "\\")}')">Перевірити</button>`;
-            setTimeout(() => document.getElementById('q-input').focus(), 200);
-        }
+            </div>`;
+        initSwipe();
+    } else if(currentMode === 'learn' || currentMode === 'test') {
+        const correctAns = def;
+        const pool = deck.map(d => (side === 'term' ? d.def : d.term));
+        let others = pool.filter(v => v !== correctAns);
+        let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+        
+        cont.innerHTML = `
+            <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
+            <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:2rem">${term}</h2>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px">
+                ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\")}')">${o}</button>`).join('')}
+            </div>
+            <div class="study-controls">
+                ${backBtn}
+                <div style="flex:1"></div> </div>`;
+    } else {
+        cont.innerHTML = `
+            <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
+            <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:2rem">${term}</h2>
+            </div>
+            <div class="input-group">
+                <input type="text" id="q-input" class="input-ans" placeholder="Твій переклад..." autocomplete="off">
+            </div>
+            <div class="study-controls">
+                ${backBtn}
+                <button class="btn-main" onclick="checkWrite('${def.replace(/'/g, "\\")}')">Перевірити</button>
+            </div>`;
+        setTimeout(() => document.getElementById('q-input')?.focus(), 200);
     }
+}
+
+    function prevStep() {
+    if (idx > 0) {
+        idx--;
+        // Видаляємо останню помилку з масиву, якщо ми повернулися назад
+        // (це необов'язково, але логічно: якщо користувач повернувся, він хоче перездати)
+        if (currentMistakes.length > 0 && currentMistakes[currentMistakes.length - 1] === studyQueue[idx]) {
+            currentMistakes.pop();
+        }
+        renderStep();
+    }
+}
 
     // --- STUDY INTERACTIONS ---
     function checkChoice(btn, user, cor) {
