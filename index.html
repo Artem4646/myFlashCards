@@ -11,8 +11,8 @@
     <meta name="theme-color" content="#0d0d0f">
     <link rel="manifest" href="manifest.json">
 
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3820/3820150.png">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3820/3820150.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -57,7 +57,7 @@
             text-align: center; animation: scaleUp 0.2s ease;
         }
         .modal h3 { margin-bottom: 15px; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
 
         .loader { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; display: none; z-index: 3000; }
         .back-btn { background: none; border: none; color: var(--accent); cursor: pointer; margin-bottom: 20px; font-size: 16px; font-weight: bold; }
@@ -73,7 +73,7 @@
     <div id="modal-overlay" class="modal-overlay">
         <div class="modal" id="modal-content">
             <h3 id="modal-title">Заголовок</h3>
-            <p id="modal-text" style="color:#aaa; font-size:14px; margin-bottom:15px;"></p>
+            <p id="modal-text" style="color:#aaa; font-size:14px; margin-bottom:10px;"></p>
             <div id="modal-input-container"></div>
             <div class="modal-buttons" id="modal-btns"></div>
         </div>
@@ -106,14 +106,15 @@
     </div>
 
 <script>
+    // КОНФІГ FIREBASE
     const firebaseConfig = {
-  apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
-  authDomain: "pet-project-90af1.firebaseapp.com",
-  projectId: "pet-project-90af1",
-  storageBucket: "pet-project-90af1.firebasestorage.app",
-  messagingSenderId: "408900485418",
-  appId: "1:408900485418:web:450d1665212044352e9e53"
-};
+        apiKey: "ТВІЙ_КЛЮЧ",
+        authDomain: "pet-project-90af1.firebaseapp.com",
+        projectId: "pet-project-90af1",
+        storageBucket: "pet-project-90af1.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -121,6 +122,7 @@
 
     let currentFolderId = null;
 
+    // ЗБЕРЕЖЕННЯ ВХОДУ (PERSISTENCE)
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
         auth.onAuthStateChanged(user => {
             toggleLoader(false);
@@ -129,42 +131,31 @@
         });
     });
 
+    // МОДАЛЬНІ ВІКНА
     function showModal({ title, text, html, confirmText, confirmClass, onConfirm }) {
         const overlay = document.getElementById('modal-overlay');
         document.getElementById('modal-title').innerText = title;
         document.getElementById('modal-text').innerText = text || "";
         const inputCont = document.getElementById('modal-input-container');
         inputCont.innerHTML = html || "";
-        
         const btnCont = document.getElementById('modal-btns');
         btnCont.innerHTML = `
             <button class="btn btn-secondary" onclick="closeModal()">Скасувати</button>
             <button class="btn ${confirmClass || 'btn-primary'}" id="modal-confirm-btn">${confirmText || 'OK'}</button>
         `;
-        
         document.getElementById('modal-confirm-btn').onclick = () => { onConfirm(); };
         overlay.style.display = 'flex';
     }
 
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-    // ПАПКИ
+    // МОДУЛІ (ПАПКИ)
     function promptAddFolder() {
         const html = `<input type="text" id="f-name" placeholder="Назва модуля..." autocomplete="off">`;
-        showModal({
-            title: "Новий модуль",
-            html: html,
-            confirmText: "Створити",
-            onConfirm: async () => {
-                const name = document.getElementById('f-name').value;
-                if(name) {
-                    toggleLoader(true);
-                    await db.collection('users').doc(auth.currentUser.uid).collection('folders').add({ name, createdAt: Date.now() });
-                    closeModal();
-                    loadFolders();
-                }
-            }
-        });
+        showModal({ title: "Новий модуль", html, confirmText: "Створити", onConfirm: async () => {
+            const name = document.getElementById('f-name').value;
+            if(name) { toggleLoader(true); await db.collection('users').doc(auth.currentUser.uid).collection('folders').add({ name, createdAt: Date.now() }); closeModal(); loadFolders(); }
+        }});
     }
 
     async function loadFolders() {
@@ -177,35 +168,57 @@
             const div = document.createElement('div');
             div.className = 'folder-item';
             div.onclick = () => openFolder(doc.id, data.name);
-            div.innerHTML = `<div>📁 ${data.name}</div><button onclick="confirmDeleteFolder('${doc.id}', event)" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>`;
+            div.innerHTML = `
+                <div style="font-weight:bold;">📁 ${data.name}</div>
+                <div style="display:flex; gap:15px;">
+                    <button onclick="promptRenameFolder('${doc.id}', '${data.name}', event)" style="background:none; border:none; cursor:pointer; font-size:18px;">✏️</button>
+                    <button onclick="confirmDeleteFolder('${doc.id}', event)" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>
+                </div>`;
             list.appendChild(div);
         });
         toggleLoader(false);
     }
 
-    // КАРТКИ - ВИПРАВЛЕНО
+    function promptRenameFolder(id, oldName, event) {
+        event.stopPropagation();
+        const html = `<input type="text" id="new-f-name" value="${oldName}" autocomplete="off">`;
+        showModal({ title: "Перейменувати", html, confirmText: "Зберегти", onConfirm: async () => {
+            const newName = document.getElementById('new-f-name').value;
+            if(newName && newName !== oldName) { await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).update({ name: newName }); loadFolders(); }
+            closeModal();
+        }});
+    }
+
+    async function confirmDeleteFolder(id, event) {
+        event.stopPropagation();
+        toggleLoader(true);
+        const cardsSnap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).collection('cards').limit(1).get();
+        const performDelete = async () => { toggleLoader(true); await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).delete(); loadFolders(); };
+
+        if (cardsSnap.empty) { performDelete(); }
+        else {
+            toggleLoader(false);
+            showModal({ title: "Видалити модуль?", text: "У папці є картки. Видалити все назавжди?", confirmText: "Видалити", confirmClass: "btn-danger", onConfirm: () => { performDelete(); closeModal(); } });
+        }
+    }
+
+    // КАРТКИ - ВИПРАВЛЕНО (БЕЗ ПИТАНЬ ПРО ПАРОЛЬ)
     function promptAddCard() {
         const html = `
             <input type="text" id="c-term" placeholder="Слово (напр. Apple)" autocomplete="off">
+            <input type="password" style="display:none;" name="fake_pass">
             <input type="text" id="c-def" placeholder="Переклад (напр. Яблуко)" autocomplete="off">
         `;
-        showModal({
-            title: "Додати картку",
-            html: html,
-            confirmText: "Зберегти",
-            onConfirm: async () => {
-                const term = document.getElementById('c-term').value;
-                const def = document.getElementById('c-def').value;
-                if(term && def) {
-                    toggleLoader(true);
-                    await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(currentFolderId).collection('cards').add({
-                        term, def, createdAt: Date.now()
-                    });
-                    closeModal();
-                    loadCards();
-                }
+        showModal({ title: "Додати картку", html, confirmText: "Зберегти", onConfirm: async () => {
+            const term = document.getElementById('c-term').value.trim();
+            const def = document.getElementById('c-def').value.trim();
+            if(term && def) { 
+                toggleLoader(true); 
+                await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(currentFolderId).collection('cards').add({ term, def, createdAt: Date.now() }); 
+                closeModal(); 
+                loadCards(); 
             }
-        });
+        }});
     }
 
     async function loadCards() {
@@ -224,26 +237,20 @@
         toggleLoader(false);
     }
 
-    // ІНШЕ
-    function openFolder(id, name) { currentFolderId = id; document.getElementById('current-folder-title').innerText = name; showScreen('scr-folder'); loadCards(); }
     async function deleteCard(id) { await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(currentFolderId).collection('cards').doc(id).delete(); loadCards(); }
-    async function confirmDeleteFolder(id, event) {
-        event.stopPropagation();
-        if(confirm("Видалити модуль?")) {
-            toggleLoader(true);
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).delete();
-            loadFolders();
-        }
-    }
+
+    // АВТЕНТИФІКАЦІЯ
     function handleAuth(type) {
         const email = document.getElementById('email').value;
         const pass = document.getElementById('pass').value;
+        if(!email || !pass) return alert("Заповніть поля");
         toggleLoader(true);
-        if(type==='reg') auth.createUserWithEmailAndPassword(email, pass).catch(e=>alert(e.message));
-        else auth.signInWithEmailAndPassword(email, pass).catch(e=>alert(e.message));
+        if(type==='reg') auth.createUserWithEmailAndPassword(email, pass).catch(e=>{alert(e.message); toggleLoader(false);});
+        else auth.signInWithEmailAndPassword(email, pass).catch(e=>{alert(e.message); toggleLoader(false);});
     }
+
     function logout() { auth.signOut(); }
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); }
     function toggleLoader(show) { document.getElementById('loading').style.display = show ? 'block' : 'none'; }
 </script>
 </body>
