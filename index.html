@@ -15,16 +15,19 @@
             --text: #ffffff; --border: #2a2a35; --danger: #ff4444;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        body { background: var(--bg); color: var(--text); padding: 20px; }
+        body { background: var(--bg); color: var(--text); padding: 20px; overflow-x: hidden; }
         
         .screen { display: none; max-width: 500px; margin: 0 auto; animation: fadeIn 0.3s ease; }
         .active { display: block; }
 
+        /* Елементи інтерфейсу */
         .auth-box { background: var(--card); padding: 30px; border-radius: 24px; border: 1px solid var(--border); text-align: center; margin-top: 50px; }
-        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); background: #000; color: #fff; outline: none; }
+        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); background: #000; color: #fff; outline: none; font-size: 16px; }
         
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .btn-primary { background: var(--accent); color: #000; margin-top: 10px; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-secondary { background: var(--border); color: #fff; }
         .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); margin-top: 12px; }
 
         .folder-item, .card-item { 
@@ -32,18 +35,41 @@
             margin-bottom: 12px; border: 1px solid var(--border); 
             display: flex; justify-content: space-between; align-items: center; 
         }
-        .folder-item:active { background: #1c1c22; }
 
-        .loader { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; display: none; z-index: 1000; }
-        
+        /* Модальне вікно (Popup) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; align-items: center;
+            justify-content: center; z-index: 2000; padding: 20px;
+        }
+        .modal {
+            background: var(--card); padding: 25px; border-radius: 24px;
+            border: 1px solid var(--border); width: 100%; max-width: 400px;
+            text-align: center; animation: scaleUp 0.2s ease;
+        }
+        .modal h3 { margin-bottom: 15px; }
+        .modal p { color: #aaa; margin-bottom: 20px; font-size: 14px; }
+        .modal-buttons { display: flex; gap: 10px; }
+
+        .loader { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; display: none; z-index: 3000; }
         .back-btn { background: none; border: none; color: var(--accent); cursor: pointer; margin-bottom: 20px; font-size: 16px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="loading" class="loader">ОБРОБКА...</div>
+
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal" id="modal-content">
+            <h3 id="modal-title">Заголовок</h3>
+            <p id="modal-text">Текст повідомлення</p>
+            <div id="modal-input-container"></div>
+            <div class="modal-buttons" id="modal-btns"></div>
+        </div>
+    </div>
 
     <div id="scr-auth" class="screen active">
         <div class="auth-box">
@@ -61,20 +87,18 @@
             <button onclick="logout()" style="background:none; border:none; color:#666; cursor:pointer;">Вихід</button>
         </div>
         <div id="folders-list"></div>
-        <button class="btn btn-primary" style="position: sticky; bottom: 20px;" onclick="addFolder()">+ Новий модуль</button>
+        <button class="btn btn-primary" style="margin-top: 10px;" onclick="promptAddFolder()">+ Новий модуль</button>
     </div>
 
     <div id="scr-folder" class="screen">
-        <button class="back-btn" onclick="showScreen('scr-main')">← Назад до модулів</button>
-        <h2 id="current-folder-title" style="margin-bottom: 20px;">Назва папки</h2>
+        <button class="back-btn" onclick="showScreen('scr-main')">← Назад</button>
+        <h2 id="current-folder-title" style="margin-bottom: 20px;">Папка</h2>
         <div id="cards-list"></div>
-        <button class="btn btn-primary" onclick="addCard()">+ Додати картку</button>
+        <button class="btn btn-primary" onclick="promptAddCard()">+ Додати картку</button>
     </div>
 
 <script>
-    // ==========================================
-    // ВСТАВ СВІЙ КОНФІГ НИЖЧЕ
-    // ==========================================
+    // === КОНФІГ FIREBASE ===
     const firebaseConfig = {
   apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
   authDomain: "pet-project-90af1.firebaseapp.com",
@@ -90,35 +114,48 @@
 
     let currentFolderId = null;
 
-    // Слідкуємо за станом входу
     auth.onAuthStateChanged(user => {
         toggleLoader(false);
-        if (user) {
-            showScreen('scr-main');
-            loadFolders();
-        } else {
-            showScreen('scr-auth');
-        }
+        if (user) { showScreen('scr-main'); loadFolders(); }
+        else { showScreen('scr-auth'); }
     });
 
-    // АВТЕНТИФІКАЦІЯ
-    async function handleAuth(type) {
-        const email = document.getElementById('email').value.trim();
-        const pass = document.getElementById('pass').value;
-        if(!email || !pass) return alert("Заповни всі поля");
-        toggleLoader(true);
-        try {
-            if(type === 'reg') await auth.createUserWithEmailAndPassword(email, pass);
-            else await auth.signInWithEmailAndPassword(email, pass);
-        } catch (e) { alert(e.message); toggleLoader(false); }
+    // === ЛОГІКА ПОПАПІВ (MODALS) ===
+    function showModal({ title, text, inputPlaceholder, confirmText, confirmClass, onConfirm }) {
+        const overlay = document.getElementById('modal-overlay');
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-text').innerText = text || "";
+        
+        const inputCont = document.getElementById('modal-input-container');
+        inputCont.innerHTML = inputPlaceholder ? `<input type="text" id="modal-input" placeholder="${inputPlaceholder}" style="margin-top:10px">` : "";
+        
+        const btnCont = document.getElementById('modal-btns');
+        btnCont.innerHTML = `
+            <button class="btn btn-secondary" onclick="closeModal()">Скасувати</button>
+            <button class="btn ${confirmClass || 'btn-primary'}" id="modal-confirm-btn">${confirmText || 'OK'}</button>
+        `;
+        
+        document.getElementById('modal-confirm-btn').onclick = () => {
+            const val = inputPlaceholder ? document.getElementById('modal-input').value : null;
+            onConfirm(val);
+            closeModal();
+        };
+        overlay.style.display = 'flex';
     }
 
-    function logout() { if(confirm("Вийти з акаунту?")) auth.signOut(); }
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-    // РОБОТА З ПАПКАМИ
-    async function addFolder() {
-        const name = prompt("Назва нового модуля:");
-        if(!name) return;
+    // === ПАПКИ ===
+    function promptAddFolder() {
+        showModal({
+            title: "Новий модуль",
+            inputPlaceholder: "Назва модуля...",
+            confirmText: "Створити",
+            onConfirm: (name) => { if(name) addFolder(name); }
+        });
+    }
+
+    async function addFolder(name) {
         toggleLoader(true);
         await db.collection('users').doc(auth.currentUser.uid).collection('folders').add({
             name: name, createdAt: Date.now()
@@ -131,7 +168,6 @@
         const snapshot = await db.collection('users').doc(auth.currentUser.uid).collection('folders').orderBy('createdAt', 'desc').get();
         const list = document.getElementById('folders-list');
         list.innerHTML = '';
-        
         snapshot.forEach(doc => {
             const data = doc.data();
             const div = document.createElement('div');
@@ -140,8 +176,8 @@
             div.innerHTML = `
                 <div style="font-weight:bold;">📁 ${data.name}</div>
                 <div style="display:flex; gap:15px;">
-                    <button onclick="renameFolder('${doc.id}', '${data.name}', event)" style="background:none; border:none; cursor:pointer;">✏️</button>
-                    <button onclick="deleteFolder('${doc.id}', event)" style="background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
+                    <button onclick="promptRenameFolder('${doc.id}', '${data.name}', event)" style="background:none; border:none; cursor:pointer; font-size:18px;">✏️</button>
+                    <button onclick="confirmDeleteFolder('${doc.id}', event)" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>
                 </div>
             `;
             list.appendChild(div);
@@ -149,6 +185,51 @@
         toggleLoader(false);
     }
 
+    function promptRenameFolder(id, oldName, event) {
+        event.stopPropagation();
+        showModal({
+            title: "Перейменувати",
+            inputPlaceholder: oldName,
+            confirmText: "Зберегти",
+            onConfirm: async (newName) => {
+                if(newName && newName !== oldName) {
+                    await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).update({ name: newName });
+                    loadFolders();
+                }
+            }
+        });
+    }
+
+    async function confirmDeleteFolder(id, event) {
+        event.stopPropagation();
+        toggleLoader(true);
+        
+        // ПЕРЕВІРКА: чи є всередині картки
+        const cardsSnap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).collection('cards').limit(1).get();
+        
+        const performDelete = async () => {
+            toggleLoader(true);
+            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).delete();
+            loadFolders();
+        };
+
+        if (cardsSnap.empty) {
+            // Якщо порожньо - видаляємо без питань
+            performDelete();
+        } else {
+            // Якщо є картки - показуємо попап
+            toggleLoader(false);
+            showModal({
+                title: "Видалити модуль?",
+                text: "У цій папці є картки. Ви впевнені, що хочете видалити все?",
+                confirmText: "Видалити",
+                confirmClass: "btn-danger",
+                onConfirm: performDelete
+            });
+        }
+    }
+
+    // === КАРТКИ ===
     function openFolder(id, name) {
         currentFolderId = id;
         document.getElementById('current-folder-title').innerText = name;
@@ -156,77 +237,67 @@
         loadCards();
     }
 
-    async function renameFolder(id, oldName, event) {
-        event.stopPropagation();
-        const newName = prompt("Нова назва:", oldName);
-        if(!newName || newName === oldName) return;
-        await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).update({ name: newName });
-        loadFolders();
-    }
-
-    async function deleteFolder(id, event) {
-        event.stopPropagation();
-        if(!confirm("Видалити цей модуль та всі картки в ньому?")) return;
-        toggleLoader(true);
-        await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).delete();
-        loadFolders();
-    }
-
-    // РОБОТА З КАРТКАМИ
-    async function addCard() {
-        const term = prompt("Слово (Термін):");
-        const def = prompt("Переклад (Визначення):");
-        if(!term || !def) return;
-        
-        toggleLoader(true);
-        await db.collection('users').doc(auth.currentUser.uid)
-                .collection('folders').doc(currentFolderId)
-                .collection('cards').add({
-                    term, def, createdAt: Date.now()
+    function promptAddCard() {
+        showModal({
+            title: "Додати картку",
+            inputPlaceholder: "Слово / Термін",
+            confirmText: "Далі",
+            onConfirm: (term) => {
+                if(!term) return;
+                showModal({
+                    title: "Переклад",
+                    inputPlaceholder: "Значення...",
+                    confirmText: "Додати",
+                    onConfirm: (def) => { if(def) addCard(term, def); }
                 });
+            }
+        });
+    }
+
+    async function addCard(term, def) {
+        toggleLoader(true);
+        await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(currentFolderId).collection('cards').add({
+            term, def, createdAt: Date.now()
+        });
         loadCards();
     }
 
     async function loadCards() {
         toggleLoader(true);
-        const snapshot = await db.collection('users').doc(auth.currentUser.uid)
-                                 .collection('folders').doc(currentFolderId)
-                                 .collection('cards').orderBy('createdAt', 'desc').get();
+        const snapshot = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(currentFolderId).collection('cards').orderBy('createdAt', 'desc').get();
         const list = document.getElementById('cards-list');
         list.innerHTML = '';
-        
         snapshot.forEach(doc => {
             const data = doc.data();
             const div = document.createElement('div');
             div.className = 'card-item';
             div.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:var(--accent);">${data.term}</div>
-                    <div style="font-size:14px; color:#aaa;">${data.def}</div>
-                </div>
-                <button onclick="deleteCard('${doc.id}')" style="background:none; border:none; color:#444; cursor:pointer;">✕</button>
+                <div><div style="font-weight:bold; color:var(--accent);">${data.term}</div><div style="font-size:14px; color:#aaa;">${data.def}</div></div>
+                <button onclick="deleteCard('${doc.id}')" style="background:none; border:none; color:#444; font-size:18px;">✕</button>
             `;
             list.appendChild(div);
         });
         toggleLoader(false);
     }
 
-    async function deleteCard(cardId) {
-        await db.collection('users').doc(auth.currentUser.uid)
-                .collection('folders').doc(currentFolderId)
-                .collection('cards').doc(cardId).delete();
+    async function deleteCard(id) {
+        await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(currentFolderId).collection('cards').doc(id).delete();
         loadCards();
     }
 
-    // ДОПОМІЖНІ
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+    // === СИСТЕМНІ ===
+    function handleAuth(type) {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('pass').value;
+        if(!email || !pass) return alert("Заповни поля");
+        toggleLoader(true);
+        if(type === 'reg') auth.createUserWithEmailAndPassword(email, pass).catch(e => { alert(e.message); toggleLoader(false); });
+        else auth.signInWithEmailAndPassword(email, pass).catch(e => { alert(e.message); toggleLoader(false); });
     }
 
-    function toggleLoader(show) {
-        document.getElementById('loading').style.display = show ? 'block' : 'none';
-    }
+    function logout() { auth.signOut(); }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function toggleLoader(show) { document.getElementById('loading').style.display = show ? 'block' : 'none'; }
 </script>
 </body>
 </html>
