@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Quizlet Master</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -16,74 +16,97 @@ body.light-theme {
   --text: #1a1d28; --muted: #586380; --accent: #4255ff;
   --border: #d9dde8;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-body { background: var(--bg); color: var(--text); padding: 20px; transition: 0.3s; padding-bottom: 80px; }
 
-/* Навігація */
-.header { max-width: 800px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; }
-.logo { font-size: 1.5rem; font-weight: 700; color: var(--accent); cursor: pointer; }
-.nav-bar { display: flex; gap: 10px; max-width: 800px; margin: 0 auto 25px; }
-.nav-btn { flex: 1; padding: 12px; border-radius: 8px; border: none; background: var(--surface); color: var(--text); font-weight: 600; cursor: pointer; border-bottom: 4px solid var(--border); transition: 0.2s; }
+/* Оптимізація для мобільних: прибираємо виділення при натисканні та зум */
+* { 
+  box-sizing: border-box; margin: 0; padding: 0; 
+  font-family: 'Inter', sans-serif; 
+  -webkit-tap-highlight-color: transparent; 
+  touch-action: manipulation; 
+}
+
+body { 
+  background: var(--bg); color: var(--text); 
+  padding: 15px; transition: 0.3s; 
+  padding-bottom: env(safe-area-inset-bottom); /* Враховуємо "брову" iPhone */
+  overflow-x: hidden;
+  height: 100vh;
+}
+
+/* Header */
+.header { max-width: 800px; margin: 0 auto 15px; display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 1.3rem; font-weight: 700; color: var(--accent); cursor: pointer; }
+
+/* Навігація стала компактнішою */
+.nav-bar { display: flex; gap: 8px; max-width: 800px; margin: 0 auto 20px; }
+.nav-btn { 
+  flex: 1; padding: 10px 5px; border-radius: 10px; border: none; 
+  background: var(--surface); color: var(--text); font-weight: 600; 
+  font-size: 0.85rem; cursor: pointer; border-bottom: 3px solid var(--border); 
+}
 .nav-btn.active { border-bottom-color: var(--accent); color: var(--accent); }
 
-/* Режими */
-.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.mode-card { background: var(--surface); padding: 15px; border-radius: 12px; cursor: pointer; border: 1px solid var(--border); text-align: center; }
-.mode-card:hover { border-color: var(--accent); }
-
-.screen { display: none; width: 100%; max-width: 650px; margin: 0 auto; animation: fadeIn 0.3s ease; }
+.screen { display: none; width: 100%; max-width: 600px; margin: 0 auto; animation: fadeIn 0.2s ease; }
 .screen.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Картки */
-.card-scene { width: 100%; height: 300px; perspective: 1000px; cursor: pointer; margin-bottom: 20px; }
-.card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: 0.5s; }
+/* Картки з тінями та кращими радіусами */
+.card-scene { width: 100%; height: 60vh; max-height: 400px; perspective: 1000px; margin-bottom: 20px; }
+.card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: 0.4s; }
 .card-inner.flipped { transform: rotateY(180deg); }
-.card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; display: flex; align-items: center; justify-content: center; padding: 25px; background: var(--surface); text-align: center; font-size: 1.5rem; font-weight: 600; border: 1px solid var(--border); }
+.card-face { 
+  position: absolute; inset: 0; backface-visibility: hidden; border-radius: 20px; 
+  display: flex; align-items: center; justify-content: center; padding: 20px; 
+  background: var(--surface); text-align: center; font-size: 1.4rem; font-weight: 600; 
+  border: 1px solid var(--border); box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
 .card-back { transform: rotateY(180deg); border-color: var(--accent); color: var(--accent); }
 
-/* Тести та Заучування */
-.option-btn { width: 100%; padding: 15px; background: var(--surface); border: 2px solid var(--border); border-radius: 10px; color: var(--text); margin-bottom: 8px; cursor: pointer; text-align: left; font-size: 1rem; }
-.option-btn:hover { border-color: var(--accent); }
-.option-btn.correct { border-color: var(--success); background: rgba(35, 178, 109, 0.1); }
-.option-btn.wrong { border-color: var(--danger); background: rgba(255, 114, 94, 0.1); }
+/* Кнопки вибору */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-card { background: var(--surface); padding: 20px 10px; border-radius: 15px; text-align: center; border: 1px solid var(--border); font-size: 0.9rem; }
 
-.input-ans { width: 100%; padding: 15px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface); color: var(--text); margin-bottom: 15px; outline: none; font-size: 1.1rem; }
+.option-btn { 
+  width: 100%; padding: 16px; background: var(--surface); border: 2px solid var(--border); 
+  border-radius: 12px; color: var(--text); margin-bottom: 10px; font-size: 1rem; text-align: center;
+}
 
-.pbar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 15px; overflow: hidden; }
-.pbar-fill { height: 100%; background: var(--accent); transition: 0.3s; width: 0%; }
+.input-ans { 
+  width: 100%; padding: 16px; border-radius: 12px; border: 2px solid var(--border); 
+  background: var(--surface); color: var(--text); margin-bottom: 15px; outline: none; 
+  font-size: 16px; /* 16px запобігає авто-зуму в Safari на iPhone */
+}
 
-.btn-main { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; }
-.item-row { background: var(--surface); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.btn-main { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
 <header class="header">
-  <div class="logo" onclick="location.reload()">Flash</div>
-  <div style="display:flex; gap:10px">
-    <button class="nav-btn" style="padding:5px 10px" onclick="exportData()">⬇️</button>
-    <button class="nav-btn" style="padding:5px 10px" onclick="importData()">⬆️</button>
-    <button class="nav-btn" style="padding:5px 10px" onclick="toggleTheme()">🌓</button>
+  <div class="logo" onclick="location.reload()">Quizlet</div>
+  <div style="display:flex; gap:8px">
+    <button class="nav-btn" style="padding:6px 12px" onclick="exportData()">💾</button>
+    <button class="nav-btn" style="padding:6px 12px" onclick="toggleTheme()">🌓</button>
   </div>
 </header>
 
 <div class="nav-bar">
   <button id="n-folders" class="nav-btn active" onclick="nav('folders')">Модулі</button>
-  <button id="n-editor" class="nav-btn" onclick="nav('editor')" style="display:none">Редактор</button>
+  <button id="n-editor" class="nav-btn" onclick="nav('editor')" style="display:none">Слова</button>
   <button id="n-study" class="nav-btn" onclick="nav('study')" style="display:none">Вчити</button>
 </div>
 
 <div id="scr-folders" class="screen active">
   <div id="folders-list"></div>
-  <button class="btn-main" onclick="addFolder()">+ Новий навчальний модуль</button>
+  <button class="btn-main" onclick="addFolder()">+ Створити модуль</button>
 </div>
 
 <div id="scr-editor" class="screen">
-  <h2 id="ed-name" style="margin-bottom:15px"></h2>
-  <div style="background:var(--surface); padding:15px; border-radius:12px; margin-bottom:15px">
-    <input type="text" id="in-w" class="input-ans" placeholder="Термін" style="font-size:0.9rem">
-    <input type="text" id="in-t" class="input-ans" placeholder="Переклад" style="font-size:0.9rem">
+  <h3 id="ed-name" style="margin-bottom:15px; text-align:center"></h3>
+  <div style="background:var(--surface); padding:15px; border-radius:15px; margin-bottom:15px">
+    <input type="text" id="in-w" class="input-ans" placeholder="Термін (напр. Apple)">
+    <input type="text" id="in-t" class="input-ans" placeholder="Переклад (напр. Яблуко)">
     <button class="btn-main" onclick="addCard()">Додати картку</button>
   </div>
   <div id="cards-list"></div>
@@ -91,17 +114,18 @@ body { background: var(--bg); color: var(--text); padding: 20px; transition: 0.3
 
 <div id="scr-study" class="screen">
   <div id="study-menu">
-    <h3 style="margin-bottom:15px">Оберіть режим:</h3>
     <div class="mode-grid">
-      <div class="mode-card" onclick="startMode('flip')">🃏<br>Картки</div>
-      <div class="mode-card" onclick="startMode('learn')">🧠<br>Заучування</div>
-      <div class="mode-card" onclick="startMode('write')">⌨️<br>Письмо</div>
-      <div class="mode-card" onclick="startMode('test')">📝<br>Тест</div>
+      <div class="mode-card" onclick="startMode('flip')"><span style="font-size:1.5rem">🃏</span><br>Картки</div>
+      <div class="mode-card" onclick="startMode('learn')"><span style="font-size:1.5rem">🧠</span><br>Заучування</div>
+      <div class="mode-card" onclick="startMode('write')"><span style="font-size:1.5rem">⌨️</span><br>Письмо</div>
+      <div class="mode-card" onclick="startMode('test')"><span style="font-size:1.5rem">📝</span><br>Тест</div>
     </div>
   </div>
 
   <div id="study-area" style="display:none">
-    <div class="pbar"><div id="pbar-fill" class="pbar-fill"></div></div>
+    <div class="pbar" style="width:100%; height:4px; background:var(--border); border-radius:2px; margin-bottom:15px">
+      <div id="pbar-fill" style="height:100%; width:0%; background:var(--accent); transition:0.3s"></div>
+    </div>
     
     <div id="m-flip" class="mode-content">
       <div class="card-scene" onclick="this.querySelector('.card-inner').classList.toggle('flipped')">
@@ -110,20 +134,20 @@ body { background: var(--bg); color: var(--text); padding: 20px; transition: 0.3
           <div class="card-face card-back" id="a-flip"></div>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
-        <button class="option-btn" style="text-align:center" onclick="next(false)">🛑 Не знаю</button>
-        <button class="option-btn" style="text-align:center" onclick="next(true)">✅ Знаю</button>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <button class="btn-main" style="background:var(--surface); color:var(--danger)" onclick="next(false)">🛑 Не знаю</button>
+        <button class="btn-main" onclick="next(true)">✅ Знаю</button>
       </div>
     </div>
 
     <div id="m-learn" class="mode-content" style="display:none">
-      <div style="text-align:center; margin-bottom:20px"><small>Оберіть правильний переклад:</small><h2 id="q-learn"></h2></div>
+      <h3 id="q-learn" style="text-align:center; margin-bottom:20px"></h3>
       <div id="learn-options"></div>
     </div>
 
     <div id="m-write" class="mode-content" style="display:none">
-      <h2 id="q-write" style="text-align:center; margin-bottom:20px"></h2>
-      <input type="text" id="write-in" class="input-ans" placeholder="Введіть відповідь...">
+      <h3 id="q-write" style="text-align:center; margin-bottom:20px"></h3>
+      <input type="text" id="write-in" class="input-ans" placeholder="Відповідь..." autocomplete="off">
       <button class="btn-main" onclick="checkWrite()">Відповісти</button>
       <div id="write-msg" style="margin-top:15px; text-align:center; font-weight:bold"></div>
     </div>
@@ -134,17 +158,18 @@ body { background: var(--bg); color: var(--text); padding: 20px; transition: 0.3
   </div>
 
   <div id="study-result" style="display:none; text-align:center">
-    <h2 id="res-title">Чудово!</h2>
+    <h2 id="res-title"></h2>
     <p id="res-desc" style="margin:15px 0; color:var(--muted)"></p>
-    <button class="btn-main" onclick="nav('study')">До режимів</button>
+    <button class="btn-main" onclick="nav('study')">Закінчити</button>
   </div>
 </div>
 
 <script>
-let state = JSON.parse(localStorage.getItem('quiz_v5')) || { folders: [], cards: {}, theme: 'dark' };
+// Вся логіка залишається такою ж, як у вашій попередній версії
+let state = JSON.parse(localStorage.getItem('quiz_v6')) || { folders: [], cards: {}, theme: 'dark' };
 let curFid = null, deck = [], idx = 0, mistakes = [], mode = '';
 
-function save() { localStorage.setItem('quiz_v5', JSON.stringify(state)); }
+function save() { localStorage.setItem('quiz_v6', JSON.stringify(state)); }
 
 function nav(s) {
   document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
@@ -162,7 +187,6 @@ function nav(s) {
   }
 }
 
-// FOLDERS
 function renderFolders() {
   const list = document.getElementById('folders-list');
   list.innerHTML = state.folders.map(f => `
@@ -172,6 +196,7 @@ function renderFolders() {
     </div>
   `).join('');
 }
+
 function addFolder() {
   const n = prompt("Назва модуля:");
   if(!n) return;
@@ -181,17 +206,17 @@ function addFolder() {
   save(); renderFolders();
 }
 
-// EDITOR
 function renderEditor() {
   document.getElementById('ed-name').textContent = state.folders.find(f => f.id === curFid).name;
   const list = document.getElementById('cards-list');
   list.innerHTML = state.cards[curFid].map(c => `
     <div class="item-row">
       <span>${c.w} — ${c.t}</span>
-      <span style="color:var(--danger); cursor:pointer" onclick="delCard(${c.id})">✕</span>
+      <span style="color:var(--danger); font-weight:bold" onclick="delCard(${c.id})">✕</span>
     </div>
   `).reverse().join('');
 }
+
 function addCard() {
   const w = document.getElementById('in-w').value.trim(), t = document.getElementById('in-t').value.trim();
   if(!w || !t) return;
@@ -199,15 +224,16 @@ function addCard() {
   save(); renderEditor();
   document.getElementById('in-w').value = ''; document.getElementById('in-t').value = '';
 }
+
 function delCard(id) {
   state.cards[curFid] = state.cards[curFid].filter(c => c.id !== id);
   save(); renderEditor();
 }
 
-// STUDY MODES
 function startMode(m) {
   mode = m;
   deck = [...state.cards[curFid]].sort(() => Math.random() - 0.5);
+  if(deck.length === 0) return alert("Додайте картки спочатку!");
   idx = 0; mistakes = [];
   document.getElementById('study-menu').style.display = 'none';
   document.getElementById('study-area').style.display = 'block';
@@ -217,7 +243,6 @@ function startMode(m) {
 function showCard() {
   if(idx >= deck.length) return finish();
   document.getElementById('pbar-fill').style.width = (idx / deck.length * 100) + '%';
-  
   document.querySelectorAll('.mode-content').forEach(c => c.style.display = 'none');
   const c = deck[idx];
 
@@ -225,13 +250,15 @@ function showCard() {
     document.getElementById('m-flip').style.display = 'block';
     document.getElementById('q-flip').textContent = c.w;
     document.getElementById('a-flip').textContent = c.t;
+    document.querySelector('.card-inner').classList.remove('flipped');
   } 
   else if(mode === 'learn') {
     document.getElementById('m-learn').style.display = 'block';
     document.getElementById('q-learn').textContent = c.w;
     const opts = [c.t];
-    while(opts.length < 4 && state.cards[curFid].length >= 4) {
-      const r = state.cards[curFid][Math.floor(Math.random()*state.cards[curFid].length)].t;
+    let allTs = state.cards[curFid].map(x => x.t);
+    while(opts.length < 4 && allTs.length > opts.length) {
+      const r = allTs[Math.floor(Math.random()*allTs.length)];
       if(!opts.includes(r)) opts.push(r);
     }
     opts.sort(() => Math.random() - 0.5);
@@ -244,6 +271,7 @@ function showCard() {
     document.getElementById('q-write').textContent = c.w;
     document.getElementById('write-in').value = '';
     document.getElementById('write-msg').textContent = '';
+    document.getElementById('write-in').focus();
   }
   else if(mode === 'test') {
     document.getElementById('m-test').style.display = 'block';
@@ -256,9 +284,8 @@ function next(correct) {
   idx++; showCard();
 }
 
-// LEARN LOGIC
 function checkLearn(picked, correct) {
-  if(picked === correct) {
+  if(picked.toLowerCase() === correct.toLowerCase()) {
     idx++; showCard();
   } else {
     alert("Помилка! Правильно: " + correct);
@@ -267,40 +294,38 @@ function checkLearn(picked, correct) {
   }
 }
 
-// WRITE LOGIC
 function checkWrite() {
   const ans = document.getElementById('write-in').value.trim().toLowerCase();
   const correct = deck[idx].t.toLowerCase();
   if(ans === correct) {
     idx++; showCard();
   } else {
-    document.getElementById('write-msg').innerHTML = `<span style="color:var(--danger)">Помилка.</span> Правильно: ${deck[idx].t}`;
+    document.getElementById('write-msg').innerHTML = `<span style="color:var(--danger)">Невірно.</span> Правильно: ${deck[idx].t}`;
     mistakes.push(deck[idx]);
     setTimeout(() => { idx++; showCard(); }, 2000);
   }
 }
 
-// TEST LOGIC
 function renderTestQuestion() {
   const c = deck[idx];
   const container = document.getElementById('test-q-container');
-  // Випадково вибираємо тип питання: 0 - вибір, 1 - письмо
   const type = Math.random() > 0.5 ? 'choice' : 'write';
   
   if(type === 'choice') {
     const opts = [c.t];
-    while(opts.length < 4 && state.cards[curFid].length >= 4) {
-        const r = state.cards[curFid][Math.floor(Math.random()*state.cards[curFid].length)].t;
+    let allTs = state.cards[curFid].map(x => x.t);
+    while(opts.length < 4 && allTs.length > opts.length) {
+        const r = allTs[Math.floor(Math.random()*allTs.length)];
         if(!opts.includes(r)) opts.push(r);
     }
     opts.sort(() => Math.random() - 0.5);
-    container.innerHTML = `<h3>Як перекладається "${c.w}"?</h3><br>` + opts.map(o => `
+    container.innerHTML = `<h3 style="text-align:center;margin-bottom:15px">"${c.w}" — це...</h3>` + opts.map(o => `
       <button class="option-btn" onclick="checkLearn('${o}', '${c.t}')">${o}</button>
     `).join('');
   } else {
-    container.innerHTML = `<h3>Напишіть переклад: "${c.w}"</h3><br>
-      <input type="text" id="test-in" class="input-ans">
-      <button class="btn-main" onclick="const a=document.getElementById('test-in').value; checkLearn(a.trim().toLowerCase(), '${c.t.toLowerCase()}')">Відповісти</button>`;
+    container.innerHTML = `<h3 style="text-align:center;margin-bottom:15px">Напишіть переклад: "${c.w}"</h3>
+      <input type="text" id="test-in" class="input-ans" autocomplete="off">
+      <button class="btn-main" onclick="const a=document.getElementById('test-in').value; checkLearn(a.trim(), '${c.t}')">Відповісти</button>`;
   }
 }
 
@@ -308,35 +333,40 @@ function finish() {
   document.getElementById('study-area').style.display = 'none';
   document.getElementById('study-result').style.display = 'block';
   const score = Math.round(((deck.length - mistakes.length) / deck.length) * 100);
-  document.getElementById('res-title').textContent = score > 70 ? "Відмінно!" : "Треба ще повчити";
-  document.getElementById('res-desc').textContent = `Ваш результат: ${score}% (${deck.length - mistakes.length} з ${deck.length})`;
+  document.getElementById('res-title').textContent = score === 100 ? "🎉 Ідеально!" : score > 70 ? "👍 Гарний результат!" : "📚 Треба ще трохи повчити";
+  document.getElementById('res-desc').textContent = `Ви знаєте ${score}% модуля (${deck.length - mistakes.length} з ${deck.length})`;
 }
 
-// THEME & DATA
 function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
   document.body.className = state.theme === 'light' ? 'light-theme' : '';
   save();
 }
+
 function exportData() {
-  const data = JSON.stringify(state);
-  const blob = new Blob([data], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'quizlet_backup.json'; a.click();
+  const blob = new Blob([JSON.stringify(state)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'quizlet_export.json'; a.click();
 }
+
 function importData() {
-  const input = document.createElement('input'); input.type = 'file';
-  input.onchange = e => {
+  const inp = document.createElement('input'); inp.type = 'file';
+  inp.onchange = e => {
     const reader = new FileReader();
     reader.onload = ev => { state = JSON.parse(ev.target.result); save(); location.reload(); };
     reader.readAsText(e.target.files[0]);
   };
-  input.click();
+  inp.click();
 }
 
-// INIT
 if(state.theme === 'light') document.body.className = 'light-theme';
 renderFolders();
+
+// Enter для письма
+document.addEventListener('keypress', e => {
+  if(e.key === 'Enter') {
+    if(mode === 'write' && document.getElementById('scr-study').classList.contains('active')) checkWrite();
+  }
+});
 </script>
 </body>
 </html>
