@@ -611,18 +611,29 @@
 
     // --- FOLDERS ---
     async function loadFolders() {
+    // Додаємо try-catch, щоб одна помилка не "вішала" весь додаток
+    try {
         const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').orderBy('createdAt', 'desc').get();
-        const list = document.getElementById('folders-list'); list.innerHTML = '';
+        const list = document.getElementById('folders-list'); 
+        list.innerHTML = '';
+
         if(snap.empty) {
             list.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--muted)">Натисни "+ Створити", щоб додати перший модуль</div>`;
             return;
         }
+
         snap.forEach(doc => {
             const d = doc.data();
+            
+            // ПЕРЕВІРКА ДАТИ: Якщо метод toDate існує — малюємо дату, якщо ні — пишемо "Щойно"
+            const dateDisplay = (d.createdAt && d.createdAt.toDate) 
+                ? d.createdAt.toDate().toLocaleDateString() 
+                : "Створення...";
+
             list.innerHTML += `<div class="item-row" onclick="selectFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}')">
                 <div>
                     <b style="font-size:1.1rem">${d.name}</b>
-                    <div style="font-size:0.8rem; color:var(--muted); margin-top:4px">${new Date(d.createdAt?.toDate()).toLocaleDateString()}</div>
+                    <div style="font-size:0.8rem; color:var(--muted); margin-top:4px">${dateDisplay}</div>
                 </div>
                 <div style="display:flex; gap:10px" onclick="event.stopPropagation()">
                     <button class="btn-icon" onclick="uiRenameFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}', event)">✏️</button>
@@ -630,7 +641,10 @@
                 </div>
             </div>`;
         });
+    } catch (err) {
+        console.error("Помилка при завантаженні папок:", err);
     }
+}
 
     function uiAddFolder() {
         const name = prompt("Введіть назву модуля:")?.trim();
