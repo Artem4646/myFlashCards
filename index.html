@@ -835,41 +835,42 @@
 
     // --- STUDY INTERACTIONS ---
     function checkChoice(btn, user, cor) {
-        if(user === cor) { 
-            btn.style.background = var(--success);
-            btn.style.color = 'white';
-            btn.style.borderColor = var(--success);
-            setTimeout(() => { idx++; renderStep(); }, 600); 
-        } else { 
-            currentMistakes.push(studyQueue[idx]);
-            btn.style.background = var(--danger);
-            btn.style.color = 'white';
-            btn.style.borderColor = var(--danger);
-            // Highlight correct one
-            document.querySelectorAll('#mode-container .btn-main').forEach(b => {
-                if(b.innerText === cor) {
-                    b.style.background = var(--success);
-                    b.style.color = 'white';
-                    b.style.borderColor = var(--success);
-                }
-            });
-            setTimeout(() => { idx++; renderStep(); }, 1200); 
-        }
+    if(user === cor) { 
+        btn.style.backgroundColor = 'var(--success)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--success)';
+        setTimeout(() => { idx++; renderStep(); }, 600); 
+    } else { 
+        currentMistakes.push(studyQueue[idx]);
+        btn.style.backgroundColor = 'var(--danger)';
+        btn.style.color = 'white';
+        btn.style.borderColor = 'var(--danger)';
+        
+        // Підсвічуємо правильну відповідь
+        document.querySelectorAll('#mode-container .btn-main').forEach(b => {
+            if(b.innerText === cor) {
+                b.style.backgroundColor = 'var(--success)';
+                b.style.color = 'white';
+                b.style.borderColor = 'var(--success)';
+            }
+        });
+        setTimeout(() => { idx++; renderStep(); }, 1200); 
     }
+}
 
-    function checkWrite(cor) {
-        const input = document.getElementById('q-input');
-        const val = input.value.trim();
-        if(val.toLowerCase() === cor.trim().toLowerCase()) { 
-            input.classList.add('correct');
-            setTimeout(() => { idx++; renderStep(); }, 600); 
-        } else { 
-            currentMistakes.push(studyQueue[idx]);
-            input.classList.add('wrong');
-            input.value = `Помилка. Правильно: ${cor}`;
-            setTimeout(() => { idx++; renderStep(); }, 1500); 
-        }
+function checkWrite(cor) {
+    const input = document.getElementById('q-input');
+    const val = input.value.trim();
+    if(val.toLowerCase() === cor.trim().toLowerCase()) { 
+        input.classList.add('correct'); // Переконайтеся, що в CSS є клас .correct { border-color: var(--success); }
+        setTimeout(() => { idx++; renderStep(); }, 600); 
+    } else { 
+        currentMistakes.push(studyQueue[idx]);
+        input.classList.add('wrong');
+        input.value = `Помилка. Правильно: ${cor}`;
+        setTimeout(() => { idx++; renderStep(); }, 1500); 
     }
+}
 
     // --- FLIP CARD ACTIONS ---
     function handleFlipResult(known) {
