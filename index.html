@@ -180,7 +180,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
-    let curFid = null, deck = [], studyQueue = [], mistakes = [], idx = 0, currentMode = '', side = 'term', startX = 0;
+    let curFid = null, deck = [], studyQueue = [], mistakes = [], currentMistakes = [], idx = 0, currentMode = '', side = 'term', startX = 0;
     let isLoginMode = true;
 
     auth.onAuthStateChanged(user => {
@@ -216,7 +216,6 @@
         });
     }
 
-    // Керування папками
     function uiAddFolder() {
         const name = prompt("Введіть назву модуля:")?.trim();
         if(name) {
@@ -274,7 +273,6 @@
         }
     }
 
-    // Редагування та видалення карток
     function uiEditCard(cid, oldT, oldD) {
         const nt = prompt("Новий термін:", oldT)?.trim();
         const nd = prompt("Новий переклад:", oldD)?.trim();
@@ -302,9 +300,9 @@
     function setSide(s) { side = s; document.querySelectorAll('.side-option').forEach(o => o.classList.remove('active')); document.getElementById('s-'+s).classList.add('active'); }
 
     function startMode(m, useMistakes = false) {
-        studyQueue = useMistakes ? [...mistakes] : [...deck].sort(() => 0.5 - Math.random());
+        studyQueue = useMistakes ? [...currentMistakes] : [...deck].sort(() => 0.5 - Math.random());
         if(studyQueue.length < 1) return alert("Додайте слова!");
-        currentMode = m; idx = 0; mistakes = [];
+        currentMode = m; idx = 0; currentMistakes = [];
         document.getElementById('study-menu').style.display = 'none';
         document.getElementById('study-area').style.display = 'block';
         renderStep();
@@ -313,77 +311,125 @@
     function renderStep() {
         const cont = document.getElementById('mode-container');
         if(idx >= studyQueue.length) {
-            cont.innerHTML = `<div style="text-align:center; padding:40px 0;"><h2>🎉 Готово!</h2><p>Помилок: ${mistakes.length}</p>
-                <button class="btn-main" style="margin-top:20px" onclick="nav('study')">До меню</button></div>`;
+            let retryBtn = '';
+            if(currentMistakes.length > 0) {
+                retryBtn = `<button class="btn-main" style="margin-top:15px; background:var(--danger)" onclick="startMode('${currentMode}', true)">🔄 Повторити помилки (${currentMistakes.length})</button>`;
+            }
+            cont.innerHTML = `<div style="text-align:center; padding:40px 0;">
+                <h2>${currentMistakes.length === 0 ? '🎉 Ідеально!' : '🏁 Готово!'}</h2>
+                <p>Помилок у цьому раунді: ${currentMistakes.length}</p>
+                ${retryBtn}
+                <button class="btn-main secondary" style="margin-top:10px" onclick="nav('study')">До меню</button></div>`;
             return;
         }
         
         const card = studyQueue[idx];
         let term = card.term, def = card.def;
 
-        // Визначаємо сторону показу
-        if(side === 'def') [term, def] = [def, term];
-        if(side === 'rand' && Math.random() > 0.5) [term, def] = [def, term];
+        // Визначаємо напрямок ( side: term, def, rand )
+        const isOriginal = (side === 'term') || (side === 'rand' && Math.random() > 0.5);
+        if(!isOriginal && side !== 'term') [term, def] = [def, term];
+        if(side === 'def') [term, def] = [card.def, card.term];
 
         if(currentMode === 'flip') {
-            cont.innerHTML = `<p style="text-align:center; color:var(--muted); margin-bottom:15px">${idx+1}/${studyQueue.length}</p>
-                <div class="card-scene" id="swipe-zone"><div class="card-inner" id="card-obj" onclick="this.classList.toggle('flipped')">
-                <div class="card-face">${term}</div><div class="card-face card-back">${def}</div></div></div>
-                <div style="display:flex; gap:15px; margin-top:20px">
-                <button class="btn-main secondary" style="color:var(--danger)" onclick="handleFlipResult(false)">❌</button>
-                <button class="btn-main" style="background:var(--success)" onclick="handleFlipResult(true)">✅</button></div>`;
+            cont.innerHTML = `
+                <p style="text-align:center; color:var(--muted); margin-bottom:15px">${idx+1}/${studyQueue.length}</p>
+                <div class="card-scene" id="swipe-zone">
+                    <div class="card-inner" id="card-obj" onclick="this.classList.toggle('flipped')">
+                        <div class="card-face">${term}</div>
+                        <div class="card-face card-back">${def}</div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px; margin-top:20px">
+                    <button class="btn-main secondary" style="flex:0.5; font-size:1.2rem" onclick="goBack()" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>⏪</button>
+                    <button class="btn-main secondary" style="color:var(--danger); flex:1" onclick="handleFlipResult(false)">❌ Не знаю</button>
+                    <button class="btn-main" style="background:var(--success); flex:1" onclick="handleFlipResult(true)">✅ Знаю</button>
+                </div>`;
             initSwipe();
-        } else if(currentMode === 'learn' || currentMode === 'test') {
-            const correctAns = def;
-            
-            // КЛЮЧОВЕ ВИПРАВЛЕННЯ: 
-            // Визначаємо, з якого списку брати неправильні варіанти (терміни чи переклади)
-            // Ми шукаємо, чи є правильна відповідь у полі 'def' оригінальної колоди
-            const isDefSide = deck.some(d => d.def === correctAns);
-            const pool = isDefSide ? deck.map(d => d.def) : deck.map(d => d.term);
-
-            let others = pool.filter(v => v !== correctAns);
-            let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
-            
-            cont.innerHTML = `<h2 style="text-align:center; margin-bottom:30px">${term}</h2><div style="display:grid; gap:12px">
-                ${opts.map(o => `<button class="input-ans" onclick="checkChoice('${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\")}')">${o}</button>`).join('')}</div>`;
         } else {
-            cont.innerHTML = `<h2 style="text-align:center; margin-bottom:30px">${term}</h2><input type="text" id="q-input" class="input-ans" placeholder="...">
-                <button class="btn-main" onclick="checkWrite('${def.replace(/'/g, "\\")}')">Перевірити</button>`;
-            setTimeout(() => document.getElementById('q-input').focus(), 100);
+            // ЛОГІКА ДЛЯ LEARN, WRITE ТА TEST
+            // Якщо це Тест, рандомно обираємо під-режим (0 - вибір, 1 - письмо)
+            let isWriteSubMode = currentMode === 'write' || (currentMode === 'test' && Math.random() > 0.5);
+
+            if (isWriteSubMode) {
+                // ПИСЬМОВИЙ ВАРІАНТ
+                cont.innerHTML = `<h2 style="text-align:center; margin-bottom:10px">${term}</h2>
+                    <p style="text-align:center; color:var(--muted); margin-bottom:25px; font-size:0.8rem;">Впишіть переклад</p>
+                    <input type="text" id="q-input" class="input-ans" placeholder="..." autocomplete="off">
+                    <button class="btn-main" onclick="checkWrite('${def.replace(/'/g, "\\")}')">Перевірити</button>`;
+                setTimeout(() => document.getElementById('q-input').focus(), 100);
+            } else {
+                // ВАРІАНТ З ВИБОРОМ
+                const correctAns = def;
+                const isDefSide = deck.some(d => d.def === correctAns);
+                const pool = isDefSide ? deck.map(d => d.def) : deck.map(d => d.term);
+
+                let others = pool.filter(v => v !== correctAns);
+                let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+                
+                cont.innerHTML = `<h2 style="text-align:center; margin-bottom:10px">${term}</h2>
+                    <p style="text-align:center; color:var(--muted); margin-bottom:25px; font-size:0.8rem;">Оберіть правильний варіант</p>
+                    <div style="display:grid; gap:12px">
+                    ${opts.map(o => `<button class="input-ans" onclick="checkChoice('${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\")}')">${o}</button>`).join('')}</div>`;
+            }
         }
     }
-
     function checkChoice(user, cor) {
         const btns = document.querySelectorAll('.input-ans');
         let sel; btns.forEach(b => { if(b.innerText === user) sel = b; });
-        if(user === cor) { sel.classList.add('correct'); setTimeout(() => { idx++; renderStep(); }, 600); }
-        else { sel.classList.add('wrong'); btns.forEach(b => { if(b.innerText === cor) b.classList.add('correct'); });
-        setTimeout(() => { mistakes.push(studyQueue[idx]); openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); }, 800); }
+        if(user === cor) { 
+            sel.classList.add('correct'); 
+            setTimeout(() => { idx++; renderStep(); }, 600); 
+        } else { 
+            currentMistakes.push(studyQueue[idx]);
+            sel.classList.add('wrong'); 
+            btns.forEach(b => { if(b.innerText === cor) b.classList.add('correct'); });
+            setTimeout(() => { openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); }, 800); 
+        }
     }
 
     function checkWrite(cor) {
         const val = document.getElementById('q-input').value.trim();
-        if(val.toLowerCase() === cor.trim().toLowerCase()) { idx++; renderStep(); }
-        else { mistakes.push(studyQueue[idx]); openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); }
+        if(val.toLowerCase() === cor.trim().toLowerCase()) { 
+            idx++; renderStep(); 
+        } else { 
+            currentMistakes.push(studyQueue[idx]);
+            openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); 
+        }
     }
 
     function handleFlipResult(known) {
-        if(!known) mistakes.push(studyQueue[idx]);
+        if(!known) currentMistakes.push(studyQueue[idx]);
         const card = document.getElementById('card-obj');
         card.style.transform = (known ? 'translateX(200px) rotate(20deg)' : 'translateX(-200px) rotate(-20deg)') + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
         card.style.opacity = '0'; setTimeout(() => { idx++; renderStep(); }, 300);
     }
 
+    function goBack() {
+        if (idx > 0) {
+            // Видаляємо останню картку зі списку помилок, якщо вона там була
+            const lastCard = studyQueue[idx - 1];
+            const mIdx = currentMistakes.indexOf(lastCard);
+            if (mIdx !== -1) {
+                currentMistakes.splice(mIdx, 1);
+            }
+            
+            idx--; // Повертаємося на один крок назад
+            renderStep();
+        }
+    }
+
     function initSwipe() {
         const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
         if(!zone) return;
-        zone.ontouchstart = e => { startX = e.touches[0].clientX; card.style.transition = '0s'; };
+        zone.ontouchstart = e => { startX = e.touches[0].clientX; if(card) card.style.transition = '0s'; };
         zone.ontouchmove = e => {
+            if(!card) return;
             let x = e.touches[0].clientX - startX;
             card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
         };
         zone.ontouchend = e => {
+            if(!card) return;
             let x = e.changedTouches[0].clientX - startX;
             if(Math.abs(x) > 120) handleFlipResult(x > 0);
             else { card.style.transition = '0.3s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; }
