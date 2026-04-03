@@ -169,6 +169,7 @@
 </nav>
 
 <script>
+    // КОНФІГ ТА АВТОРИЗАЦІЯ
     const firebaseConfig = {
         apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
         authDomain: "pet-project-90af1.firebaseapp.com",
@@ -177,131 +178,44 @@
         messagingSenderId: "408900485418",
         appId: "1:408900485418:web:450d1665212044352e9e53"
     };
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
-    let curFid = null, deck = [], studyQueue = [], mistakes = [], currentMistakes = [], idx = 0, currentMode = '', side = 'term', startX = 0;
-    let isLoginMode = true;
+    let curFid = null, deck = [], studyQueue = [], currentMistakes = [], idx = 0, currentMode = '', side = 'term';
+    let isFlipped = false; 
 
     auth.onAuthStateChanged(user => {
-        if(user) { document.getElementById('nav-container').style.display = 'flex'; document.getElementById('logout-btn').style.display = 'block'; nav('folders'); }
-        else { document.getElementById('nav-container').style.display = 'none'; document.getElementById('logout-btn').style.display = 'none'; showScreen('scr-auth'); }
+        if(user) { document.getElementById('nav-container').style.display = 'flex'; nav('folders'); }
+        else { document.getElementById('nav-container').style.display = 'none'; showScreen('scr-auth'); }
     });
 
-    function toggleAuthMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? "З поверненням!" : "Створити акаунт";
-        document.getElementById('auth-submit-btn').innerText = isLoginMode ? "Увійти" : "Зареєструватися";
-    }
-
-    async function handleAuth() {
-        const e = document.getElementById('email').value.trim(), p = document.getElementById('pass').value.trim();
-        if(!e || !p) return alert("Заповніть поля");
-        try { if(isLoginMode) await auth.signInWithEmailAndPassword(e, p); else await auth.createUserWithEmailAndPassword(e, p); }
-        catch(err) { alert(err.message); }
-    }
+    function nav(s) { if(!curFid && s!=='folders') return nav('folders'); showScreen('scr-'+s); if(s==='folders') loadFolders(); if(s==='editor') loadCards(); if(s==='study') { document.getElementById('study-menu').style.display='block'; document.getElementById('study-area').style.display='none'; } }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function toggleAuthMode() { window.isLoginMode = !window.isLoginMode; document.getElementById('auth-title').innerText = window.isLoginMode ? "Вхід" : "Реєстрація"; }
+    async function handleAuth() { const e = document.getElementById('email').value, p = document.getElementById('pass').value; try { await auth.signInWithEmailAndPassword(e,p); } catch(err) { await auth.createUserWithEmailAndPassword(e,p); } }
 
     async function loadFolders() {
-        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').orderBy('createdAt', 'desc').get();
+        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').get();
         const list = document.getElementById('folders-list'); list.innerHTML = '';
         snap.forEach(doc => {
-            const d = doc.data();
-            list.innerHTML += `<div class="item-row" onclick="selectFolder('${doc.id}', '${d.name}')">
-                <div><b>${d.name}</b></div>
-                <div style="display:flex; gap:10px">
-                    <button class="nav-btn" style="padding:10px; background:var(--surface-h); border-radius:12px" onclick="uiRenameFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}', event)">✏️</button>
-                    <button class="nav-btn" style="padding:10px; background:var(--surface-h); color:var(--danger); border-radius:12px" onclick="uiDeleteFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}', event)">🗑️</button>
-                </div>
-            </div>`;
+            list.innerHTML += `<div class="item-row" onclick="selectFolder('${doc.id}', '${doc.data().name}')"><b>${doc.data().name}</b></div>`;
         });
     }
-
-    function uiAddFolder() {
-        const name = prompt("Введіть назву модуля:")?.trim();
-        if(name) {
-            db.collection('users').doc(auth.currentUser.uid).collection('folders').add({
-                name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            loadFolders();
-        }
-    }
-
-    function uiRenameFolder(fid, oldName, e) {
-        e.stopPropagation();
-        const newName = prompt("Нова назва модуля:", oldName)?.trim();
-        if(newName && newName !== oldName) {
-            db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(fid).update({name: newName});
-            loadFolders();
-        }
-    }
-
-    async function uiDeleteFolder(fid, name, e) {
-        e.stopPropagation();
-        if(confirm(`Видалити модуль "${name}" та всі слова в ньому?`)) {
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(fid).delete();
-            loadFolders();
-        }
-    }
-
-    async function selectFolder(id, name) {
-        curFid = id; document.getElementById('editor-title').innerText = name; document.getElementById('study-title').innerText = name;
-        await loadCards(); nav('study');
-    }
-
+    function uiAddFolder() { const n = prompt("Назва:"); if(n) db.collection('users').doc(auth.currentUser.uid).collection('folders').add({name:n, createdAt: Date.now()}).then(loadFolders); }
+    async function selectFolder(id, name) { curFid = id; await loadCards(); nav('study'); }
     async function loadCards() {
         if(!curFid) return;
         const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').get();
         deck = []; snap.forEach(doc => deck.push({id: doc.id, ...doc.data()}));
         const list = document.getElementById('cards-list'); list.innerHTML = '';
-        deck.forEach(c => {
-            list.innerHTML += `<div class="item-row">
-                <div style="flex:1"><b>${c.term}</b> → ${c.def}</div>
-                <div style="display:flex; gap:8px">
-                    <button class="nav-btn" style="padding:8px; background:var(--surface-h); border-radius:10px" onclick="uiEditCard('${c.id}', '${c.term.replace(/'/g, "\\'")}', '${c.def.replace(/'/g, "\\")}')">✏️</button>
-                    <button class="nav-btn" style="padding:8px; background:var(--surface-h); color:var(--danger); border-radius:10px" onclick="uiDeleteCard('${c.id}')">🗑️</button>
-                </div>
-            </div>`;
-        });
+        deck.forEach(c => { list.innerHTML += `<div class="item-row"><div>${c.term} - ${c.def}</div></div>`; });
     }
-
-    async function addCard() {
-        const t = document.getElementById('in-w'), d = document.getElementById('in-t');
-        const term = t.value.trim(), def = d.value.trim();
-        if(term && def && curFid) {
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').add({term, def});
-            t.value=''; d.value=''; loadCards();
-        }
-    }
-
-    function uiEditCard(cid, oldT, oldD) {
-        const nt = prompt("Новий термін:", oldT)?.trim();
-        const nd = prompt("Новий переклад:", oldD)?.trim();
-        if(nt && nd) {
-            db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').doc(cid).update({term: nt, def: nd});
-            loadCards();
-        }
-    }
-
-    async function uiDeleteCard(cid) {
-        if(confirm("Видалити цю картку?")) {
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').doc(cid).delete();
-            loadCards();
-        }
-    }
-
-    function nav(s) {
-        if(!curFid && (s==='editor'||s==='study')) return nav('folders');
-        showScreen('scr-'+s);
-        if(s==='folders') loadFolders();
-        if(s==='editor') loadCards();
-        if(s==='study') { document.getElementById('study-menu').style.display='block'; document.getElementById('study-area').style.display='none'; }
-    }
+    function addCard() { const t=document.getElementById('in-w'), d=document.getElementById('in-t'); if(t.value && d.value) db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').add({term:t.value, def:d.value}).then(() => {t.value=''; d.value=''; loadCards();}); }
 
     function setSide(s) { side = s; document.querySelectorAll('.side-option').forEach(o => o.classList.remove('active')); document.getElementById('s-'+s).classList.add('active'); }
 
     function startMode(m, useMistakes = false) {
         studyQueue = useMistakes ? [...currentMistakes] : [...deck].sort(() => 0.5 - Math.random());
-        if(studyQueue.length < 1) return alert("Додайте слова!");
+        if(studyQueue.length < 1) return alert("Мало слів!");
         currentMode = m; idx = 0; currentMistakes = [];
         document.getElementById('study-menu').style.display = 'none';
         document.getElementById('study-area').style.display = 'block';
@@ -311,194 +225,91 @@
     function renderStep() {
         const cont = document.getElementById('mode-container');
         if(idx >= studyQueue.length) {
-            let retryBtn = '';
-            if(currentMistakes.length > 0) {
-                retryBtn = `<button class="btn-main" style="margin-top:15px; background:var(--danger)" onclick="startMode('${currentMode}', true)">🔄 Повторити помилки (${currentMistakes.length})</button>`;
-            }
-            cont.innerHTML = `<div style="text-align:center; padding:40px 0;">
-                <h2>${currentMistakes.length === 0 ? '🎉 Ідеально!' : '🏁 Готово!'}</h2>
-                <p>Помилок у цьому раунді: ${currentMistakes.length}</p>
-                ${retryBtn}
-                <button class="btn-main secondary" style="margin-top:10px" onclick="nav('study')">До меню</button></div>`;
+            cont.innerHTML = `<div style="text-align:center; padding:40px"><h2>Готово! Помилок: ${currentMistakes.length}</h2><button class="btn-main" onclick="nav('study')">Меню</button></div>`;
             return;
         }
         
+        // КРИТИЧНО: Скидаємо стан перевороту для нової картки
+        isFlipped = false; 
+        
         const card = studyQueue[idx];
         let term = card.term, def = card.def;
-
-        // Визначаємо напрямок ( side: term, def, rand )
-        const isOriginal = (side === 'term') || (side === 'rand' && Math.random() > 0.5);
-        if(!isOriginal && side !== 'term') [term, def] = [def, term];
-        if(side === 'def') [term, def] = [card.def, card.term];
+        if(side === 'def' || (side === 'rand' && Math.random() > 0.5)) [term, def] = [def, term];
 
         if(currentMode === 'flip') {
             cont.innerHTML = `
-                <p style="text-align:center; color:var(--muted); margin-bottom:15px">${idx+1}/${studyQueue.length}</p>
+                <p style="text-align:center; color:var(--muted); margin-bottom:10px">${idx+1}/${studyQueue.length}</p>
                 <div class="card-scene" id="swipe-zone">
                     <div class="card-inner" id="card-obj">
                         <div class="card-face">${term}</div>
                         <div class="card-face card-back">${def}</div>
                     </div>
                 </div>
-                <div style="display:flex; gap:12px; margin-top:20px">
-                    <button class="btn-main secondary" style="flex:0.5; font-size:1.2rem" onclick="goBack()" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>⏪</button>
-                    <button class="btn-main secondary" style="color:var(--danger); flex:1" onclick="handleFlipResult(false)">❌ Не знаю</button>
-                    <button class="btn-main" style="background:var(--success); flex:1" onclick="handleFlipResult(true)">✅ Знаю</button>
+                <div style="display:flex; gap:10px">
+                    <button class="btn-main secondary" onclick="handleFlipResult(false)">❌</button>
+                    <button class="btn-main" style="background:var(--success)" onclick="handleFlipResult(true)">✅</button>
                 </div>`;
             initSwipe();
         } else {
-            // ЛОГІКА ДЛЯ LEARN, WRITE ТА TEST
-            // Якщо це Тест, рандомно обираємо під-режим (0 - вибір, 1 - письмо)
-            let isWriteSubMode = currentMode === 'write' || (currentMode === 'test' && Math.random() > 0.5);
-
-            if (isWriteSubMode) {
-                // ПИСЬМОВИЙ ВАРІАНТ
-                cont.innerHTML = `<h2 style="text-align:center; margin-bottom:10px">${term}</h2>
-                    <p style="text-align:center; color:var(--muted); margin-bottom:25px; font-size:0.8rem;">Впишіть переклад</p>
-                    <input type="text" id="q-input" class="input-ans" placeholder="..." autocomplete="off">
-                    <button class="btn-main" onclick="checkWrite('${def.replace(/'/g, "\\")}')">Перевірити</button>`;
-                setTimeout(() => document.getElementById('q-input').focus(), 100);
-            } else {
-                // ВАРІАНТ З ВИБОРОМ
-                const correctAns = def;
-                const isDefSide = deck.some(d => d.def === correctAns);
-                const pool = isDefSide ? deck.map(d => d.def) : deck.map(d => d.term);
-
-                let others = pool.filter(v => v !== correctAns);
-                let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
-                
-                cont.innerHTML = `<h2 style="text-align:center; margin-bottom:10px">${term}</h2>
-                    <p style="text-align:center; color:var(--muted); margin-bottom:25px; font-size:0.8rem;">Оберіть правильний варіант</p>
-                    <div style="display:grid; gap:12px">
-                    ${opts.map(o => `<button class="input-ans" onclick="checkChoice('${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\")}')">${o}</button>`).join('')}</div>`;
-            }
-        }
-    }
-    function checkChoice(user, cor) {
-        const btns = document.querySelectorAll('.input-ans');
-        let sel; btns.forEach(b => { if(b.innerText === user) sel = b; });
-        if(user === cor) { 
-            sel.classList.add('correct'); 
-            setTimeout(() => { idx++; renderStep(); }, 600); 
-        } else { 
-            currentMistakes.push(studyQueue[idx]);
-            sel.classList.add('wrong'); 
-            btns.forEach(b => { if(b.innerText === cor) b.classList.add('correct'); });
-            setTimeout(() => { openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); }, 800); 
+            cont.innerHTML = `<div style="text-align:center"><h2>${term}</h2><input type="text" id="q-in" class="input-ans" placeholder="Переклад..."><button class="btn-main" onclick="checkWrite('${def}')">Перевірити</button></div>`;
         }
     }
 
     function checkWrite(cor) {
-        const val = document.getElementById('q-input').value.trim();
-        if(val.toLowerCase() === cor.trim().toLowerCase()) { 
-            idx++; renderStep(); 
-        } else { 
-            currentMistakes.push(studyQueue[idx]);
-            openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); }); 
-        }
+        const val = document.getElementById('q-in').value.trim();
+        if(val.toLowerCase() === cor.toLowerCase()) { idx++; renderStep(); }
+        else { currentMistakes.push(studyQueue[idx]); alert("Правильно: " + cor); idx++; renderStep(); }
+    }
+
+    function initSwipe() {
+        const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
+        let startX, startY, moveX = 0, isMoving = false;
+
+        zone.onpointerdown = e => {
+            startX = e.clientX; startY = e.clientY;
+            card.style.transition = '0s';
+            isMoving = false;
+        };
+
+        zone.onpointermove = e => {
+            moveX = e.clientX - startX;
+            let moveY = e.clientY - startY;
+            if (Math.abs(moveX) > 10 || Math.abs(moveY) > 10) isMoving = true;
+            
+            if (isMoving) {
+                let rotY = isFlipped ? 180 : 0;
+                card.style.transform = `translateX(${moveX}px) rotate(${moveX/15}deg) rotateY(${rotY}deg)`;
+            }
+        };
+
+        zone.onpointerup = e => {
+            if (!isMoving) {
+                // ПЕРЕВОРОТ (працює коректно завдяки скиданню isFlipped в renderStep)
+                isFlipped = !isFlipped;
+                card.style.transition = '0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                card.style.transform = `rotateY(${isFlipped ? 180 : 0}deg)`;
+            } else {
+                if (Math.abs(moveX) > 120) {
+                    handleFlipResult(moveX > 0);
+                } else {
+                    card.style.transition = '0.3s';
+                    card.style.transform = `rotateY(${isFlipped ? 180 : 0}deg)`;
+                }
+            }
+            moveX = 0; // Скидаємо зміщення
+        };
     }
 
     function handleFlipResult(known) {
         if(!known) currentMistakes.push(studyQueue[idx]);
         const card = document.getElementById('card-obj');
         if(!card) return;
-
-        const currentRotateY = card.classList.contains('flipped') ? ' rotateY(180deg)' : ' rotateY(0deg)';
-        const moveX = known ? 500 : -500;
-        const rotateZ = known ? 45 : -45;
-
-        card.style.transition = '0.5s ease-in';
-        card.style.transform = `translateX(${moveX}px) rotate(${rotateZ}deg)` + currentRotateY;
+        card.style.transition = '0.4s ease-in';
+        card.style.transform = `translateX(${known ? 500 : -500}px) rotate(${known ? 45 : -45}deg) rotateY(${isFlipped ? 180 : 0}deg)`;
         card.style.opacity = '0';
-
-        setTimeout(() => { 
-            idx++; 
-            renderStep(); 
-        }, 300);
+        setTimeout(() => { idx++; renderStep(); }, 300);
     }
 
-    function goBack() {
-        if (idx > 0) {
-            // Видаляємо останню картку зі списку помилок, якщо вона там була
-            const lastCard = studyQueue[idx - 1];
-            const mIdx = currentMistakes.indexOf(lastCard);
-            if (mIdx !== -1) {
-                currentMistakes.splice(mIdx, 1);
-            }
-            
-            idx--; // Повертаємося на один крок назад
-            renderStep();
-        }
-    }
-
-    function initSwipe() {
-        const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
-        if(!zone || !card) return;
-
-        let startTime, startY, isMoving = false;
-
-        zone.ontouchstart = e => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            startTime = Date.now();
-            card.style.transition = '0s'; // Вимикаємо анімацію під час руху пальцем
-            isMoving = false;
-        };
-
-        zone.ontouchmove = e => {
-            let x = e.touches[0].clientX - startX;
-            let y = e.touches[0].clientY - startY;
-            
-            // Якщо рухаємо пальцем більше ніж на 10px, вважаємо це свайпом
-            if (Math.abs(x) > 10) {
-                isMoving = true;
-                let currentRotateY = card.classList.contains('flipped') ? ' rotateY(180deg)' : ' rotateY(0deg)';
-                card.style.transform = `translateX(${x}px) rotate(${x/15}deg)` + currentRotateY;
-            }
-        };
-
-        zone.ontouchend = e => {
-            let x = e.changedTouches[0].clientX - startX;
-            let duration = Date.now() - startTime;
-
-            // Логіка ПЕРЕВОРОТУ: якщо рух був мінімальний і короткий
-            if (!isMoving && duration < 250) {
-                flipCard(card);
-                return;
-            }
-
-            // Логіка СВАЙПУ (завершення)
-            if (Math.abs(x) > 120) {
-                handleFlipResult(x > 0);
-            } else {
-                // Повертаємо картку в центр, зберігаючи її поточну сторону
-                card.style.transition = '0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : 'rotateY(0deg)';
-            }
-        };
-
-        // Для десктопа (клік мишкою)
-        zone.onclick = () => {
-            if (!isMoving) flipCard(card);
-        };
-    }
-
-    function flipCard(card) {
-        card.style.transition = '0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        card.classList.toggle('flipped');
-        // Явно вказуємо кут, щоб JS не "затирав" стан перевороту
-        card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : 'rotateY(0deg)';
-    }
-
-    function openPopup(t, b, cb) {
-        document.getElementById('m-title').innerText = t; document.getElementById('m-body').innerText = b;
-        const btns = document.getElementById('m-btns'); btns.innerHTML = '';
-        const btn = document.createElement('button'); btn.className="btn-main"; btn.innerText="ОК";
-        btn.onclick = () => { if(cb) cb(); document.getElementById('modal-overlay').style.display='none'; };
-        btns.appendChild(btn); document.getElementById('modal-overlay').style.display='flex';
-    }
-
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
     function toggleTheme() { document.body.classList.toggle('light-theme'); }
 </script>
 </body>
