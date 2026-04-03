@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashCards Ultimate</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0d0f; --surface: #16161a; --surface2: #1e1e24;
+  --border: #2a2a35; --accent: #c8f04c; --accent2: #7b6cff;
+  --text: #f0ede8; --muted: #7a7a8a; --danger: #ff5c6c; --success: #4cffb3;
+}
+body.light-theme {
+  --bg: #f5f5f7; --surface: #ffffff; --surface2: #f0f0f3;
+  --border: #d1d1d6; --accent: #5e5ce6; --accent2: #007aff;
+  --text: #1c1c1e; --muted: #8e8e93; --danger: #ff3b30; --success: #34c759;
+}
+body {
+  font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text);
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem 1rem; transition: 0.3s;
+}
+
+/* TABS */
+.top-tabs { display:flex; gap:.4rem; margin-bottom:1.5rem; background:var(--surface); padding:.3rem; border-radius:12px; border:1px solid var(--border); }
+.tab-btn { 
+  padding:.6rem 1.2rem; border:none; background:transparent; color:var(--muted); 
+  font-size:.7rem; cursor:pointer; border-radius:8px; text-transform:uppercase; transition: 0.3s;
+}
+.tab-btn.active { background: var(--accent) !important; color: var(--bg) !important; font-weight: bold; }
+
+/* CONTROLLERS */
+.controls-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; justify-content: center; }
+.toggle-chip { 
+  cursor: pointer; background: var(--surface); border: 1px solid var(--border); 
+  padding: 0.5rem 0.8rem; border-radius: 20px; font-size: 0.65rem; transition: 0.3s;
+}
+.toggle-chip.active { background: var(--accent2); color: white; border-color: var(--accent2); }
+
+.screen { display:none; width:100%; max-width:600px; animation: fadeIn 0.3s ease; }
+.screen.active { display:block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* CARDS */
+.card-scene { width:100%; height:260px; perspective:1000px; cursor:pointer; margin-bottom:1.5rem; }
+.card-inner { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition: 0.5s; }
+.card-inner.flipped { transform:rotateY(180deg); }
+.card-face { 
+  position:absolute; inset:0; backface-visibility:hidden; border-radius:20px; 
+  display:flex; align-items:center; justify-content:center; padding:2rem; 
+  border:2px solid var(--border); background: var(--surface); text-align: center;
+}
+.card-back { transform:rotateY(180deg); background: var(--surface2); border-color: var(--accent2); }
+
+/* INPUTS */
+.write-input { 
+  width: 100%; padding: 1.2rem; border-radius: 15px; border: 2px solid var(--border); 
+  background: var(--surface); color: var(--text); font-size: 1.2rem; text-align: center; outline: none; margin-bottom: 1rem;
+}
+.write-input.correct { border-color: var(--success); background: rgba(76, 255, 179, 0.05); }
+.write-input.wrong { border-color: var(--danger); background: rgba(255, 92, 108, 0.05); }
+
+.action-row { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:.8rem; }
+.btn { padding:.8rem; border-radius:12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; font-family: inherit; }
+.btn-main { background: var(--accent); color: var(--bg); font-weight: 600; border: none; width: 100%; margin-top: 10px; }
+
+.folder-card { background:var(--surface); border:1px solid var(--border); border-radius:15px; padding:1.2rem; cursor:pointer; margin-bottom: 0.8rem; }
+.pbar-wrap { width:100%; height:6px; background:var(--border); border-radius:10px; margin-bottom:1rem; overflow:hidden; }
+.pbar { height:100%; background:var(--accent); transition: 0.4s; }
+</style>
+</head>
+<body class="dark-theme">
+
+<div class="controls-bar">
+  <div class="toggle-chip" onclick="toggleTheme()">🌓 Тема</div>
+  <div id="chip-mix" class="toggle-chip" onclick="toggleSetting('shuffle')">🔀 Мікс</div>
+  <div id="chip-side" class="toggle-chip" onclick="toggleSetting('backOnly')">🙃 Тільки зад</div>
+  <div id="chip-write" class="toggle-chip" onclick="toggleSetting('alwaysWrite')">⌨️ Писати</div>
+</div>
+
+<div class="top-tabs">
+  <button class="tab-btn active" id="tab-folders" onclick="nav('folders')">Папки</button>
+  <button class="tab-btn" id="tab-editor" onclick="nav('editor')" style="display:none">Картки</button>
+  <button class="tab-btn" id="tab-study" onclick="startStudy()" style="display:none">Вчити</button>
+</div>
+
+<div class="screen active" id="screen-folders">
+  <div id="folders-grid"></div>
+  <button class="btn btn-main" onclick="addFolder()">+ Нова папка</button>
+</div>
+
+<div class="screen" id="screen-editor">
+  <h2 id="ed-folder-name" style="margin-bottom:1rem"></h2>
+  <input type="text" id="inp-w" class="write-input" placeholder="Слово" style="font-size:0.9rem; padding:0.8rem">
+  <input type="text" id="inp-t" class="write-input" placeholder="Переклад" style="font-size:0.9rem; padding:0.8rem">
+  <button class="btn btn-main" onclick="addCard()">Додати картку</button>
+  <div id="editor-list" style="margin-top:1.5rem"></div>
+</div>
+
+<div class="screen" id="screen-study">
+  <div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+  <div id="study-stats" style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:1rem; color:var(--muted)">
+    <span id="study-progress">0/0</span>
+    <span id="mistake-count" style="color:var(--danger)">Помилок: 0</span>
+  </div>
+
+  <div id="mode-flip">
+    <div class="card-scene" onclick="flip()">
+      <div class="card-inner" id="card-inner">
+        <div class="card-face"><div><small style="color:var(--muted)">ПИТАННЯ</small><h2 id="q-text"></h2></div></div>
+        <div class="card-face card-back"><div><small style="color:var(--muted)">ВІДПОВІДЬ</small><h2 id="a-text"></h2></div></div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn" style="color:var(--danger)" onclick="handleAnswer(false)">Не знаю</button>
+      <button class="btn" onclick="flip()">Перегорнути</button>
+      <button class="btn" style="color:var(--success)" onclick="handleAnswer(true)">Знаю</button>
+    </div>
+  </div>
+
+  <div id="mode-write" style="display:none">
+    <div style="text-align:center; margin-bottom:1.5rem">
+      <h2 id="write-q" style="font-family:'Playfair Display'; font-size:2rem"></h2>
+    </div>
+    <input type="text" id="write-input" class="write-input" placeholder="Ваша відповідь..." autocomplete="off">
+    <button class="btn btn-main" id="btn-check" onclick="checkWrite()">Перевірити</button>
+    <div id="write-feedback" style="margin-top:1rem; text-align:center; min-height:1.2rem"></div>
+  </div>
+
+  <div id="mode-result" style="display:none; text-align:center">
+    <h2 style="font-family:'Playfair Display'">Сесію завершено!</h2>
+    <p id="result-text" style="margin: 1rem 0; color:var(--muted)"></p>
+    <button class="btn btn-main" id="btn-review-mistakes" onclick="reviewMistakes()">Повторити помилки</button>
+    <button class="btn" style="width:100%; margin-top:10px" onclick="nav('folders')">До списку папок</button>
+  </div>
+</div>
+
+<script>
+let state = JSON.parse(localStorage.getItem('fc_v4')) || {
+  folders: [], cards: {}, theme: 'dark', shuffle: false, backOnly: false, alwaysWrite: false
+};
+let activeFid = null;
+let deck = [];
+let currentIndex = 0;
+let mistakes = [];
+
+function save() { localStorage.setItem('fc_v4', JSON.stringify(state)); }
+
+// NAVIGATION
+function nav(screen) {
+  activeFid = (screen === 'folders') ? null : activeFid;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if(document.getElementById('tab-'+screen)) document.getElementById('tab-'+screen).classList.add('active');
+  
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+  
+  document.getElementById('tab-editor').style.display = activeFid ? 'block' : 'none';
+  document.getElementById('tab-study').style.display = activeFid ? 'block' : 'none';
+  if(screen === 'folders') renderFolders();
+  if(screen === 'editor') renderEditor();
+}
+
+function toggleSetting(key) {
+  state[key] = !state[key];
+  updateChips();
+  save();
+}
+
+function updateChips() {
+  document.getElementById('chip-mix').classList.toggle('active', state.shuffle);
+  document.getElementById('chip-side').classList.toggle('active', state.backOnly);
+  document.getElementById('chip-write').classList.toggle('active', state.alwaysWrite);
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.body.className = state.theme + '-theme';
+  save();
+}
+
+// FOLDERS & CARDS
+function renderFolders() {
+  const container = document.getElementById('folders-grid');
+  container.innerHTML = state.folders.map(f => `
+    <div class="folder-card" onclick="openFolder('${f.id}')">
+      <h3>${f.name}</h3>
+      <small style="color:var(--muted)">${(state.cards[f.id] || []).length} карток</small>
+    </div>
+  `).join('');
+}
+
+function openFolder(id) { activeFid = id; nav('editor'); }
+
+function addFolder() {
+  const n = prompt("Назва:");
+  if(!n) return;
+  const id = 'f'+Date.now();
+  state.folders.push({id, name: n});
+  state.cards[id] = [];
+  save(); renderFolders();
+}
+
+function addCard() {
+  const w = document.getElementById('inp-w').value.trim();
+  const t = document.getElementById('inp-t').value.trim();
+  if(!w || !t) return;
+  state.cards[activeFid].push({id: Date.now(), word: w, trans: t});
+  save(); renderEditor();
+  document.getElementById('inp-w').value = ''; document.getElementById('inp-t').value = '';
+}
+
+function renderEditor() {
+  const folder = state.folders.find(f => f.id === activeFid);
+  document.getElementById('ed-folder-name').textContent = folder.name;
+  const list = document.getElementById('editor-list');
+  list.innerHTML = state.cards[activeFid].map(c => `
+    <div style="display:flex; justify-content:space-between; padding:0.8rem; border-bottom:1px solid var(--border)">
+      <span>${c.word} — ${c.trans}</span>
+      <span style="color:var(--danger); cursor:pointer" onclick="deleteCard(${c.id})">✕</span>
+    </div>
+  `).reverse().join('');
+}
+
+function deleteCard(id) {
+  state.cards[activeFid] = state.cards[activeFid].filter(c => c.id !== id);
+  save(); renderEditor();
+}
+
+// STUDY LOGIC
+function startStudy() {
+  nav('study');
+  deck = [...state.cards[activeFid]];
+  if(state.shuffle) deck.sort(() => Math.random() - 0.5);
+  currentIndex = 0; mistakes = [];
+  showCurrent();
+}
+
+function showCurrent() {
+  document.getElementById('mode-result').style.display = 'none';
+  if(currentIndex >= deck.length) return endSession();
+
+  document.getElementById('study-progress').textContent = `${currentIndex + 1}/${deck.length}`;
+  document.getElementById('mistake-count').textContent = `Помилок: ${mistakes.length}`;
+  document.getElementById('pbar').style.width = (currentIndex / deck.length * 100) + '%';
+
+  const card = deck[currentIndex];
+  const q = state.backOnly ? card.trans : card.word;
+  const a = state.backOnly ? card.word : card.trans;
+
+  if(state.alwaysWrite) {
+    document.getElementById('mode-flip').style.display = 'none';
+    document.getElementById('mode-write').style.display = 'block';
+    document.getElementById('write-q').textContent = q;
+    document.getElementById('write-input').value = '';
+    document.getElementById('write-input').className = 'write-input';
+    document.getElementById('write-feedback').textContent = '';
+    document.getElementById('write-input').focus();
+  } else {
+    document.getElementById('mode-flip').style.display = 'block';
+    document.getElementById('mode-write').style.display = 'none';
+    document.getElementById('q-text').textContent = q;
+    document.getElementById('a-text').textContent = a;
+    document.getElementById('card-inner').classList.remove('flipped');
+  }
+}
+
+function flip() { document.getElementById('card-inner').classList.toggle('flipped'); }
+
+function handleAnswer(isCorrect) {
+  if(!isCorrect) mistakes.push(deck[currentIndex]);
+  currentIndex++;
+  showCurrent();
+}
+
+function checkWrite() {
+  const card = deck[currentIndex];
+  const correct = state.backOnly ? card.word.toLowerCase() : card.trans.toLowerCase();
+  const input = document.getElementById('write-input');
+  const userVal = input.value.trim().toLowerCase();
+
+  if(userVal === correct) {
+    input.classList.add('correct');
+    setTimeout(() => { currentIndex++; showCurrent(); }, 600);
+  } else {
+    input.classList.add('wrong');
+    mistakes.push(card);
+    document.getElementById('write-feedback').innerHTML = `Правильно: <b style="color:var(--accent)">${correct}</b>`;
+    setTimeout(() => { currentIndex++; showCurrent(); }, 2000);
+  }
+}
+
+function endSession() {
+  document.getElementById('mode-flip').style.display = 'none';
+  document.getElementById('mode-write').style.display = 'none';
+  document.getElementById('mode-result').style.display = 'block';
+  document.getElementById('result-text').textContent = `Ви пройшли ${deck.length} карток. Помилок: ${mistakes.length}`;
+  document.getElementById('btn-review-mistakes').style.display = mistakes.length > 0 ? 'block' : 'none';
+  document.getElementById('pbar').style.width = '100%';
+}
+
+function reviewMistakes() {
+  deck = [...mistakes];
+  mistakes = [];
+  currentIndex = 0;
+  showCurrent();
+}
+
+// INIT
+document.body.className = state.theme + '-theme';
+updateChips();
+renderFolders();
+
+// Дозволити Enter для перевірки
+document.addEventListener('keypress', (e) => {
+  if(e.key === 'Enter' && state.alwaysWrite && activeFid) checkWrite();
+});
+</script>
+</body>
+</html>
