@@ -19,11 +19,10 @@
         :root { 
             --bg: #0d0d0f; --surface: #16161a; --surface-h: #1c1c21;
             --accent: #c8f04c; --text: #ffffff; --muted: #a1a1aa; 
-            --border: #2a2a35; --danger: #ff4444;
+            --border: #2a2a35; --danger: #ff4444; --success: #23b26d;
         }
 
-        /* Виправлення стабільності екрана */
-        html { overflow-y: scroll; height: 100%; }
+        html { overflow: scroll; height: 100%; overflow-x: hidden; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
         body { 
@@ -35,7 +34,6 @@
         .screen { display: none; max-width: 500px; margin: 0 auto; animation: fadeIn 0.2s ease; }
         .screen.active { display: block; }
 
-        /* Навігація */
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; max-width: 500px; margin-inline: auto; }
         .nav-bar { display: none; gap: 8px; max-width: 500px; margin: 0 auto 20px; }
         .nav-bar.visible { display: flex; }
@@ -45,7 +43,6 @@
         }
         .nav-btn.active { border-color: var(--accent); color: var(--accent); }
 
-        /* Елементи інтерфейсу */
         .auth-box { background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid var(--border); text-align: center; margin-top: 50px; }
         input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); background: #000; color: #fff; outline: none; font-size: 16px; }
         input:focus { border-color: var(--accent); }
@@ -62,7 +59,6 @@
             display: flex; justify-content: space-between; align-items: center; cursor: pointer;
         }
 
-        /* Модалки */
         #modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); display: none; align-items: center;
@@ -70,16 +66,50 @@
         }
         .modal { background: var(--surface); padding: 25px; border-radius: 24px; border: 1px solid var(--border); width: 100%; max-width: 400px; }
 
-        /* Картки навчання */
-        .card-scene { width: 100%; height: 300px; perspective: 1000px; margin-bottom: 20px; }
-        .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: 0.4s; cursor: pointer; }
+        /* --- НОВІ СТИЛІ ДЛЯ СВАЙПІВ КАРТОК --- */
+        .study-area-wrapper { position: relative; width: 100%; height: 450px; }
+        .card-scene { 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 350px; perspective: 1000px; 
+            margin-bottom: 20px; 
+            will-change: transform; /* Оптимізація для телефонів */
+        }
+        .card-inner { 
+            width: 100%; height: 100%; position: relative; 
+            transform-style: preserve-3d; 
+            transition: transform 0.1s linear, background-color 0.2s ease; /* Плавне повернення та перевертання */
+            cursor: pointer; 
+            border-radius: 24px;
+            background: var(--surface); border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        /* Класи, що додаються JavaScript при свайпі */
         .card-inner.flipped { transform: rotateY(180deg); }
+        .card-inner.swiping-right { background-color: rgba(35, 178, 109, 0.2); border-color: var(--success); }
+        .card-inner.swiping-left { background-color: rgba(255, 114, 94, 0.2); border-color: var(--danger); }
+        
+        /* Без анімації при перетягуванні пальцем */
+        .card-inner.no-transition { transition: none !important; }
+        
+        /* Анімація вильоту картки */
+        .card-inner.swipe-out-right { transform: translate(150%, 20px) rotate(30deg) !important; transition: transform 0.4s ease-out !important; opacity: 0; }
+        .card-inner.swipe-out-left { transform: translate(-150%, 20px) rotate(-30deg) !important; transition: transform 0.4s ease-out !important; opacity: 0; }
+
         .card-face { 
-            position: absolute; inset: 0; backface-visibility: hidden; border-radius: 20px; 
-            display: flex; align-items: center; justify-content: center; padding: 20px;
-            background: var(--surface); text-align: center; font-size: 1.5rem; font-weight: 700; border: 1px solid var(--border);
+            position: absolute; inset: 0; backface-visibility: hidden; border-radius: 24px; 
+            display: flex; align-items: center; justify-content: center; padding: 30px;
+            text-align: center; font-size: 1.8rem; font-weight: 700;
         }
         .card-back { transform: rotateY(180deg); color: var(--accent); }
+
+        /* Підказки свайпів */
+        .swipe-hint {
+            position: absolute; bottom: -60px; left: 0; width: 100%;
+            display: flex; justify-content: space-between;
+            color: var(--muted); font-size: 0.8rem; font-weight: 600;
+            padding: 0 10px; opacity: 0.6;
+        }
 
         .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .mode-card { background: var(--surface); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid var(--border); cursor: pointer; font-weight: 600; }
@@ -134,7 +164,7 @@
 </div>
 
 <div id="scr-editor" class="screen">
-    <h2 id="current-folder-title" style="margin-bottom: 20px; text-align:center">Модуль</h2>
+    <h2 id="current-folder-title" style="margin-bottom: 15px; text-align:center">Модуль</h2>
     <div style="background:var(--surface); padding:15px; border-radius:20px; margin-bottom:20px; border:1px solid var(--border)">
         <input type="text" id="c-term" placeholder="Термін (English)" autocomplete="off">
         <input type="text" id="c-def" placeholder="Переклад (Українська)" autocomplete="off">
@@ -153,7 +183,7 @@
         </div>
     </div>
     <div id="study-area" style="display:none">
-        <div id="mode-container"></div>
+        <div id="mode-container" class="study-area-wrapper"></div>
     </div>
     <div id="study-result" style="display:none; text-align:center">
         <h2 id="res-title">🎉 Готово!</h2>
@@ -163,14 +193,14 @@
 </div>
 
 <script>
-    // КОНФІГУРАЦІЯ FIREBASE
+    // КОНФІГУРАЦІЯ FIREBASE (Вставте СВІЙ копій сюди!)
     const firebaseConfig = {
-        apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
-        authDomain: "pet-project-90af1.firebaseapp.com",
-        projectId: "pet-project-90af1",
-        storageBucket: "pet-project-90af1.firebasestorage.app",
-        messagingSenderId: "408900485418",
-        appId: "1:408900485418:web:450d1665212044352e9e53"
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT.firebaseapp.com",
+        projectId: "YOUR_PROJECT",
+        storageBucket: "YOUR_PROJECT.firebasestorage.app",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -179,22 +209,8 @@
 
     let curFid = null, curFname = '', deck = [], idx = 0, mistakes = [], mode = '';
 
-    // ВІДСТЕЖЕННЯ ВХОДУ
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            document.getElementById('scr-auth').classList.remove('active');
-            document.getElementById('app-header').style.display = 'flex';
-            document.getElementById('app-nav').classList.add('visible');
-            nav('main');
-        } else {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('scr-auth').classList.add('active');
-            document.getElementById('app-header').style.display = 'none';
-            document.getElementById('app-nav').classList.remove('visible');
-        }
-    });
+    const save = () => localStorage.setItem('quiz_final_v3', JSON.stringify(state));
 
-    // НАВІГАЦІЯ
     function nav(s) {
         window.scrollTo(0, 0);
         document.querySelectorAll('.screen').forEach(scr => scr.classList.remove('active'));
@@ -204,7 +220,6 @@
         const btn = document.getElementById('n-' + s);
         if(btn) btn.classList.add('active');
 
-        // Керування кнопками навігації
         document.getElementById('n-editor').style.display = curFid ? 'block' : 'none';
         document.getElementById('n-study').style.display = curFid ? 'block' : 'none';
 
@@ -217,7 +232,6 @@
         }
     }
 
-    // УТИЛІТИ
     function showToast(m) { 
         const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; 
         setTimeout(() => t.style.display = 'none', 2000); 
@@ -233,8 +247,8 @@
     }
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-    // МОДУЛІ (FIREBASE)
     async function loadFolders() {
+        if(!auth.currentUser) return;
         toggleLoader(true);
         const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').orderBy('createdAt', 'desc').get();
         const list = document.getElementById('folders-list');
@@ -283,7 +297,6 @@
         }
     }
 
-    // КАРТКИ (FIREBASE)
     async function loadCards() {
         if(!curFid) return nav('main');
         document.getElementById('current-folder-title').innerText = curFname;
@@ -294,7 +307,7 @@
         snap.forEach(doc => {
             const data = doc.data();
             const div = document.createElement('div');
-            div.className = 'item-row';
+            div.className = 'card-item item-row';
             div.style.cursor = 'default';
             div.innerHTML = `<div><b>${data.term}</b><br><small style="color:var(--muted)">${data.def}</small></div>
                              <span onclick="deleteCard('${doc.id}')" style="color:var(--danger)">✕</span>`;
@@ -321,7 +334,6 @@
         loadCards();
     }
 
-    // НАВЧАННЯ
     async function startMode(m) {
         toggleLoader(true);
         const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').get();
@@ -342,19 +354,26 @@
         if(idx >= deck.length) return finishStudy();
         const c = deck[idx];
         const cont = document.getElementById('mode-container');
-        
+        cont.innerHTML = ''; // Очистка
+
         if(mode === 'flip') {
             cont.innerHTML = `
-                <div class="card-scene" onclick="this.querySelector('.card-inner').classList.toggle('flipped')">
-                    <div class="card-inner">
+                <div class="card-scene" id="card-scene">
+                    <div class="card-inner" id="card-inner">
                         <div class="card-face">${c.term}</div>
                         <div class="card-face card-back">${c.def}</div>
                     </div>
                 </div>
-                <div class="mode-grid">
-                    <button class="btn btn-secondary" onclick="next(false)">🛑 Не знаю</button>
-                    <button class="btn btn-primary" onclick="next(true)">✅ Знаю</button>
-                </div>`;
+                <div class="swipe-hint">
+                    <span style="color:var(--danger)">← Не знаю</span>
+                    <span style="color:var(--success)">Знаю →</span>
+                </div>
+                <p style="text-align:center; color:var(--muted); font-size:0.8rem; margin-top:10px">Натисніть, щоб перевернути</p>
+                `;
+            
+            // Ініціалізація свайпів після створення DOM
+            initCardSwipes();
+
         } else if(mode === 'learn' || mode === 'test') {
             let opts = [c.def];
             let allDefs = deck.map(d => d.def);
@@ -363,17 +382,105 @@
                 if(!opts.includes(r)) opts.push(r);
             }
             opts.sort(() => Math.random() - 0.5);
-            cont.innerHTML = `<h2 style="text-align:center; margin-bottom:30px">${c.term}</h2>` + 
-                opts.map(o => `<button class="btn btn-secondary" style="margin-bottom:10px; text-align:left" onclick="checkAnswer('${o}','${c.def}')">${o}</button>`).join('');
+            cont.innerHTML = `<h2 style="text-align:center; margin-bottom:30px; margin-top:50px;">${c.term}</h2>` + 
+                opts.map(o => `<button class="btn btn-secondary" style="margin-bottom:12px; text-align:left; border-radius:18px" onclick="checkAnswer('${o}','${c.def}')">${o}</button>`).join('');
         } else if(mode === 'write') {
             cont.innerHTML = `
-                <h2 style="text-align:center; margin-bottom:30px">${c.term}</h2>
+                <h2 style="text-align:center; margin-bottom:30px; margin-top:50px">${c.term}</h2>
                 <input type="text" id="w-ans" placeholder="Переклад..." autocomplete="off">
                 <button class="btn btn-primary" onclick="checkAnswer(document.getElementById('w-ans').value.trim(),'${c.def}')">Перевірити</button>`;
             setTimeout(() => document.getElementById('w-ans').focus(), 100);
         }
     }
 
+    // --- ЛОГІКА СВАЙПІВ (TOUCH EVENTS) ---
+    function initCardSwipes() {
+        const cardInner = document.getElementById('card-inner');
+        const cardScene = document.getElementById('card-scene');
+        
+        let startX = 0, currentX = 0, moveX = 0;
+        let isPressed = false;
+
+        // Натискання (Touch Start)
+        cardScene.addEventListener('touchstart', (e) => {
+            isPressed = true;
+            startX = e.touches[0].clientX;
+            cardInner.classList.add('no-transition'); // Вимикаємо анімацію при русі
+        }, { passive: true });
+
+        // Рух (Touch Move)
+        cardScene.addEventListener('touchmove', (e) => {
+            if (!isPressed) return;
+            currentX = e.touches[0].clientX;
+            moveX = currentX - startX;
+
+            // Нахил та зміщення картки (сила нахилу 0.1)
+            let rotation = moveX * 0.1; 
+            cardInner.style.transform = `translate(${moveX}px, ${Math.abs(moveX)*0.1}px) rotate(${rotation}deg)`;
+            
+            // Якщо перевернута — додаємо rotateY(180) до трансформу
+            if (cardInner.classList.contains('flipped')) {
+                cardInner.style.transform += ` rotateY(180deg)`;
+            }
+
+            // Додавання кольору при свайпі
+            if (moveX > 50) {
+                cardInner.classList.add('swiping-right');
+                cardInner.classList.remove('swiping-left');
+            } else if (moveX < -50) {
+                cardInner.classList.add('swiping-left');
+                cardInner.classList.remove('swiping-right');
+            } else {
+                cardInner.classList.remove('swiping-right', 'swiping-left');
+            }
+
+        }, { passive: true });
+
+        // Відпускання пальця (Touch End / Cancel)
+        const handleEnd = () => {
+            if (!isPressed) return;
+            isPressed = false;
+            cardInner.classList.remove('no-transition');
+
+            // Threshold (поріг свайпу) = 1/3 ширини екрана
+            const threshold = window.innerWidth / 3;
+
+            if (moveX > threshold) {
+                // Успішний свайп вправо (Знаю)
+                cardInner.classList.add('swipe-out-right');
+                setTimeout(() => nextSwiped(true), 300); // Чекаємо анімацію вильоту
+            } else if (moveX < -threshold) {
+                // Успішний свайп вліво (Не знаю)
+                cardInner.classList.add('swipe-out-left');
+                setTimeout(() => nextSwiped(false), 300);
+            } else {
+                // Занадто короткий свайп — пружинимо назад в центр
+                cardInner.style.transform = '';
+                if(cardInner.classList.contains('flipped')) cardInner.style.transform = 'rotateY(180deg)';
+                cardInner.classList.remove('swiping-right', 'swiping-left');
+            }
+            moveX = 0; // Скидання
+        };
+
+        cardScene.addEventListener('touchend', handleEnd);
+        cardScene.addEventListener('touchcancel', handleEnd);
+
+        // Тап (натискання) для перевертання
+        cardScene.addEventListener('click', (e) => {
+            // Перевертаємо тільки якщо картка не була зміщена (це був тап, а не свайп)
+            if (Math.abs(moveX) < 5) {
+                cardInner.classList.toggle('flipped');
+            }
+        });
+    }
+
+    function nextSwiped(known) {
+        if(!known) mistakes.push(deck[idx]);
+        idx++;
+        showCurrentTask();
+    }
+
+    // Логіка для інших режимів (не змінювалася)
     function checkAnswer(p, correct) {
         if(p.toLowerCase() === correct.toLowerCase()) {
             idx++; showCurrentTask();
