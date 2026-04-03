@@ -2,9 +2,19 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Flash Pro Cloud</title>
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Flash Pro">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0d0d0f"> <link rel="manifest" href="manifest.json">
+
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968292.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/5968/5968292.png">
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -15,14 +25,15 @@
             --text: #ffffff; --border: #2a2a35; --danger: #ff4444;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); padding: 20px; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); padding: 20px; overflow-x: hidden; padding-bottom: env(safe-area-inset-bottom); }
         
         .screen { display: none; max-width: 500px; margin: 0 auto; animation: fadeIn 0.3s ease; }
         .active { display: block; }
 
         /* Елементи інтерфейсу */
         .auth-box { background: var(--card); padding: 30px; border-radius: 24px; border: 1px solid var(--border); text-align: center; margin-top: 50px; }
-        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); background: #000; color: #fff; outline: none; font-size: 16px; }
+        input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); background: #000; color: #fff; outline: none; font-size: 16px; transition: border-color 0.2s; }
+        input:focus { border-color: var(--accent); }
         
         .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .btn:active { transform: scale(0.98); }
@@ -74,8 +85,8 @@
 
     <div id="scr-auth" class="screen active">
         <div class="auth-box">
-            <h1 style="margin-bottom: 10px;">Flash Pro</h1>
-            <p style="color: #666; margin-bottom: 25px; font-size: 14px;">Ваш персональний словник</p>
+            <h1 style="margin-bottom: 10px; font-size: 32px;">Flash Pro</h1>
+            <p style="color: #666; margin-bottom: 25px; font-size: 14px;">Ваш персональний хмарний словник</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="pass" placeholder="Пароль">
             <button class="btn btn-primary" onclick="handleAuth('login')">Увійти</button>
@@ -100,7 +111,9 @@
     </div>
 
 <script>
-    // === КОНФІГ FIREBASE ===
+    // ==========================================
+    // Config FireBase
+    // ==========================================
     const firebaseConfig = {
   apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
   authDomain: "pet-project-90af1.firebaseapp.com",
@@ -110,6 +123,7 @@
   appId: "1:408900485418:web:450d1665212044352e9e53"
 };
 
+    // Ініціалізація
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -160,7 +174,7 @@
     async function handleAuth(type) {
         const email = document.getElementById('email').value.trim();
         const pass = document.getElementById('pass').value;
-        if(!email || !pass) return alert("Заповніть пошта/пароль");
+        if(!email || !pass) return alert("Заповніть поля");
         
         toggleLoader(true);
         try {
