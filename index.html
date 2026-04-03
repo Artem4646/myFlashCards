@@ -39,44 +39,35 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        body { background: var(--bg); color: var(--text); padding-bottom: 110px; min-height: 100vh; transition: 0.4s; overflow-x: hidden; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 110px; min-height: 100vh; transition: 0.4s; }
 
         header { max-width: 500px; margin: 0 auto; padding: 25px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-        .logo { font-size: 1.6rem; font-weight: 800; background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
+        .logo { font-size: 1.6rem; font-weight: 800; background: var(--accent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         .nav-bar { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 420px; background: var(--surface); padding: 8px; border-radius: 28px; border: 1px solid var(--border); display: none; gap: 8px; box-shadow: var(--shadow); z-index: 1000; backdrop-filter: blur(20px); }
         .nav-btn { flex: 1; padding: 12px 5px; border-radius: 20px; border: none; background: transparent; color: var(--muted); font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.3s; }
-        .nav-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .nav-btn.active { background: var(--accent); color: white; }
 
         .screen { display: none; width: 100%; max-width: 500px; margin: 0 auto; padding: 0 20px; animation: slideUp 0.4s ease-out; }
         .screen.active { display: block; }
 
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .input-ans { width: 100%; padding: 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin-bottom: 15px; outline: none; font-size: 1rem; transition: 0.3s; cursor: pointer; }
-        .input-ans:focus { border-color: var(--accent-solid); background: var(--surface-h); }
-        .input-ans.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; transform: scale(1.02); }
-        .input-ans.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; animation: shake 0.4s; }
+        .input-ans { width: 100%; padding: 18px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text); margin-bottom: 15px; outline: none; font-size: 1rem; }
+        .input-ans.correct { background: var(--success) !important; color: white !important; border-color: var(--success) !important; }
+        .input-ans.wrong { background: var(--danger) !important; color: white !important; border-color: var(--danger) !important; }
 
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-
-        .btn-main { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 22px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-main { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 22px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; }
         .btn-main.secondary { background: var(--surface-h); color: var(--text); border: 1px solid var(--border); }
 
         .item-row { background: var(--surface); padding: 20px; border-radius: 24px; margin-bottom: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 
-        .side-picker { background: var(--surface); padding: 6px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 5px; border: 1px solid var(--border); }
+        .side-picker { background: var(--surface); padding: 6px; border-radius: 20px; margin-bottom: 25px; display: flex; gap: 5px; }
         .side-option { flex: 1; padding: 10px; border-radius: 15px; cursor: pointer; text-align: center; font-size: 0.85rem; font-weight: 700; color: var(--muted); }
         .side-option.active { background: var(--bg); color: var(--accent-solid); }
 
         .study-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .study-card { background: var(--surface); padding: 30px 15px; border-radius: 28px; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; }
-
-        .card-scene { width: 100%; height: 380px; perspective: 1200px; margin-bottom: 30px; position: relative; }
-        .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); border-radius: 40px; }
-        .card-inner.flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 38px; display: flex; align-items: center; justify-content: center; padding: 35px; background: var(--surface); text-align: center; font-size: 1.8rem; font-weight: 800; border: 2px solid var(--border); box-shadow: var(--shadow); }
-        .card-back { transform: rotateY(180deg); background: var(--accent); color: white; border: none; }
 
         #modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); display: none; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(12px); }
         .modal { background: var(--surface-h); padding: 35px; border-radius: 35px; width: 90%; max-width: 420px; text-align: center; border: 1px solid var(--border); }
@@ -87,34 +78,223 @@
 <div id="modal-overlay">
     <div class="modal">
         <h3 id="m-title" style="margin-bottom:12px;"></h3>
-        <p id="m-body" style="margin-bottom:25px; color:var(--muted);"></p>
-        <div id="m-btns"></div>
+        <div id="m-content"></div>
+        <div id="m-btns" style="display:flex; gap:10px; margin-top:20px"></div>
     </div>
 </div>
 
 <header>
     <div class="logo">FLASHCLOUD</div>
-    <div style="display:flex; gap:12px">
-        <button class="nav-btn" style="padding:12px; border-radius: 50%; background: var(--surface); width:45px; height:45px;" onclick="toggleTheme()">🌓</button>
-        <button id="logout-btn" class="nav-btn" style="padding:12px; border-radius: 50%; background: var(--surface); width:45px; height:45px; display:none" onclick="auth.signOut()">🚪</button>
-    </div>
+    <button class="nav-btn" style="max-width:50px; background:var(--surface)" onclick="toggleTheme()">🌓</button>
 </header>
 
 <div id="scr-auth" class="screen active">
     <div style="text-align:center; padding-top:60px">
-        <h2 id="auth-title">Вхід</h2>
-        <input type="email" id="email" class="input-ans" style="cursor:text" placeholder="Email">
-        <input type="password" id="pass" class="input-ans" style="cursor:text" placeholder="Пароль">
-        <button class="btn-main" onclick="handleAuth()">Продовжити</button>
-        <p style="margin-top: 20px; color: var(--muted);" onclick="toggleAuthMode()">
-            <span id="auth-switch">Ще немає акаунта? Створити</span>
-        </p>
+        <h2>FlashCloud</h2>
+        <input type="email" id="email" class="input-ans" placeholder="Email">
+        <input type="password" id="pass" class="input-ans" placeholder="Пароль">
+        <button class="btn-main" onclick="handleAuth()">Увійти</button>
     </div>
 </div>
 
 <div id="scr-folders" class="screen">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px">
         <h2>Модулі</h2>
-        <button class="btn-main" style="width:auto; padding:12px 20px" onclick="uiAddFolder()">+ Створити</button>
+        <button class="btn-main" style="width:auto; padding:10px 20px" onclick="uiAddFolder()">+</button>
     </div>
-    <div id="
+    <div id="folders-list"></div>
+</div>
+
+<div id="scr-editor" class="screen">
+    <h2 id="editor-title" style="margin-bottom:20px">Слова</h2>
+    <div style="background:var(--surface); padding:20px; border-radius:25px; margin-bottom:30px">
+        <input type="text" id="in-w" class="input-ans" placeholder="Термін">
+        <input type="text" id="in-t" class="input-ans" placeholder="Переклад">
+        <button class="btn-main" onclick="addCard()">Додати</button>
+    </div>
+    <div id="cards-list"></div>
+</div>
+
+<div id="scr-study" class="screen">
+    <div id="study-menu">
+        <h2 id="study-title">Навчання</h2>
+        <div class="side-picker">
+            <div class="side-option active" id="s-term" onclick="setSide('term')">Термін</div>
+            <div class="side-option" id="s-def" onclick="setSide('def')">Переклад</div>
+        </div>
+        <div class="study-grid">
+            <div class="study-card" onclick="startMode('learn')"><span>🧠</span><b>Вибір</b></div>
+            <div class="study-card" onclick="startMode('write')"><span>⌨️</span><b>Письмо</b></div>
+        </div>
+    </div>
+    <div id="study-area" style="display:none">
+        <div id="mode-container"></div>
+    </div>
+</div>
+
+<nav id="nav-container" class="nav-bar">
+    <button id="n-folders" class="nav-btn" onclick="nav('folders')">Модулі</button>
+    <button id="n-editor" class="nav-btn" onclick="nav('editor')">Слова</button>
+    <button id="n-study" class="nav-btn" onclick="nav('study')">Вчити</button>
+</nav>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
+        authDomain: "pet-project-90af1.firebaseapp.com",
+        projectId: "pet-project-90af1",
+        storageBucket: "pet-project-90af1.firebasestorage.app",
+        messagingSenderId: "408900485418",
+        appId: "1:408900485418:web:450d1665212044352e9e53"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth(), db = firebase.firestore();
+    let curFid = null, deck = [], studyQueue = [], mistakes = [], idx = 0, side = 'term';
+
+    auth.onAuthStateChanged(user => {
+        if(user) { document.getElementById('nav-container').style.display = 'flex'; nav('folders'); }
+        else { document.getElementById('nav-container').style.display = 'none'; showScreen('scr-auth'); }
+    });
+
+    async function handleAuth() {
+        const e = document.getElementById('email').value, p = document.getElementById('pass').value;
+        try { await auth.signInWithEmailAndPassword(e, p); } catch(err) { alert(err.message); }
+    }
+
+    async function loadFolders() {
+        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').get();
+        const list = document.getElementById('folders-list'); list.innerHTML = '';
+        snap.forEach(doc => {
+            list.innerHTML += `<div class="item-row" onclick="selectFolder('${doc.id}', '${doc.data().name}')">
+                <b>${doc.data().name}</b>
+                <button class="nav-btn" style="max-width:40px" onclick="uiDeleteFolder('${doc.id}', event)">🗑️</button>
+            </div>`;
+        });
+    }
+
+    async function selectFolder(id, name) {
+        curFid = id; 
+        document.getElementById('editor-title').innerText = name;
+        await loadCards(); nav('editor');
+    }
+
+    async function loadCards() {
+        if(!curFid) return;
+        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').get();
+        deck = []; snap.forEach(doc => deck.push({id: doc.id, ...doc.data()}));
+        const list = document.getElementById('cards-list'); list.innerHTML = '';
+        deck.forEach(c => {
+            list.innerHTML += `<div class="item-row">
+                <div style="flex:1"><b>${c.term}</b> - ${c.def}</div>
+                <div style="display:flex; gap:10px">
+                    <button class="nav-btn" style="max-width:40px" onclick="uiEditCard('${c.id}', '${c.term.replace(/'/g, "\\'")}', '${c.def.replace(/'/g, "\\")}')">✏️</button>
+                    <button class="nav-btn" style="max-width:40px; color:var(--danger)" onclick="uiDeleteCard('${c.id}')">🗑️</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    async function addCard() {
+        const t = document.getElementById('in-w'), d = document.getElementById('in-t');
+        if(t.value && d.value && curFid) {
+            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').add({term:t.value.trim(), def:d.value.trim()});
+            t.value=''; d.value=''; loadCards();
+        }
+    }
+
+    // ВИДАЛЕННЯ ТА РЕДАГУВАННЯ
+    async function uiDeleteCard(cid) {
+        if(confirm("Видалити слово?")) {
+            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').doc(cid).delete();
+            loadCards();
+        }
+    }
+
+    function uiEditCard(cid, oldTerm, oldDef) {
+        const modal = document.getElementById('modal-overlay');
+        document.getElementById('m-title').innerText = "Редагувати";
+        document.getElementById('m-content').innerHTML = `
+            <input type="text" id="edit-t" class="input-ans" value="${oldTerm}">
+            <input type="text" id="edit-d" class="input-ans" value="${oldDef}">
+        `;
+        const btns = document.getElementById('m-btns'); btns.innerHTML = '';
+        
+        const saveBtn = document.createElement('button');
+        saveBtn.className = "btn-main"; saveBtn.innerText = "Зберегти";
+        saveBtn.onclick = async () => {
+            const nt = document.getElementById('edit-t').value;
+            const nd = document.getElementById('edit-d').value;
+            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').doc(cid).update({term: nt, def: nd});
+            modal.style.display = 'none'; loadCards();
+        };
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = "btn-main secondary"; cancelBtn.innerText = "Скасувати";
+        cancelBtn.onclick = () => modal.style.display = 'none';
+
+        btns.appendChild(cancelBtn); btns.appendChild(saveBtn);
+        modal.style.display = 'flex';
+    }
+
+    async function uiDeleteFolder(fid, e) {
+        e.stopPropagation();
+        if(confirm("Видалити модуль з усіма словами?")) {
+            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(fid).delete();
+            loadFolders();
+        }
+    }
+
+    function uiAddFolder() {
+        const name = prompt("Назва модуля:");
+        if(name) {
+            db.collection('users').doc(auth.currentUser.uid).collection('folders').add({name, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+            loadFolders();
+        }
+    }
+
+    function nav(s) { showScreen('scr-'+s); if(s==='folders') loadFolders(); if(s==='editor') loadCards(); if(s==='study') { document.getElementById('study-menu').style.display='block'; document.getElementById('study-area').style.display='none'; } }
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function toggleTheme() { document.body.classList.toggle('light-theme'); }
+    function setSide(s) { side = s; document.querySelectorAll('.side-option').forEach(o => o.classList.remove('active')); document.getElementById('s-'+s).classList.add('active'); }
+
+    // НАВЧАННЯ (СПРОЩЕНЕ)
+    function startMode(m) {
+        studyQueue = [...deck].sort(() => 0.5 - Math.random());
+        if(studyQueue.length < 1) return alert("Додайте слова!");
+        idx = 0; mistakes = [];
+        document.getElementById('study-menu').style.display = 'none';
+        document.getElementById('study-area').style.display = 'block';
+        renderStep(m);
+    }
+
+    function renderStep(m) {
+        const cont = document.getElementById('mode-container');
+        if(idx >= studyQueue.length) { cont.innerHTML = `<div style="text-align:center"><h2>🎉 Завершено!</h2><button class="btn-main" onclick="nav('study')">До меню</button></div>`; return; }
+        
+        const card = studyQueue[idx];
+        const term = side === 'term' ? card.term : card.def;
+        const cor = side === 'term' ? card.def : card.term;
+
+        if(m === 'learn') {
+            const others = deck.map(d => side === 'term' ? d.def : d.term).filter(v => v !== cor);
+            const opts = [cor, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+            cont.innerHTML = `<h2>${term}</h2><div style="display:grid; gap:10px; margin-top:20px">
+                ${opts.map(o => `<button class="input-ans" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${cor.replace(/'/g, "\\")}', '${m}')">${o}</button>`).join('')}</div>`;
+        } else {
+            cont.innerHTML = `<h2>${term}</h2><input type="text" id="wi" class="input-ans" placeholder="Переклад..."><button class="btn-main" onclick="checkWrite('${cor.replace(/'/g, "\\")}', '${m}')">Перевірити</button>`;
+        }
+    }
+
+    function checkChoice(btn, user, cor, m) {
+        if(user === cor) { btn.classList.add('correct'); setTimeout(() => { idx++; renderStep(m); }, 600); }
+        else { btn.classList.add('wrong'); setTimeout(() => { idx++; renderStep(m); }, 1000); }
+    }
+
+    function checkWrite(cor, m) {
+        const val = document.getElementById('wi').value.trim();
+        if(val.toLowerCase() === cor.toLowerCase()) { idx++; renderStep(m); } else { alert("Невірно! Правильно: " + cor); idx++; renderStep(m); }
+    }
+</script>
+</body>
+</html>
