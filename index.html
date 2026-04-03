@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FlashCloud Ultimate</title>
+    <title>Flash</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -52,8 +52,7 @@
         .side-option { flex: 1; padding: 10px; border-radius: 12px; cursor: pointer; text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); transition: 0.2s; }
         .side-option.active { background: var(--accent); color: white; }
 
-        /* CARD SYSTEM */
-        .card-scene { width: 100%; height: 350px; perspective: 1000px; margin-bottom: 20px; position: relative; touch-action: none; }
+        .card-scene { width: 100%; height: 320px; perspective: 1000px; margin-bottom: 20px; position: relative; touch-action: none; }
         .card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); cursor: pointer; }
         .card-inner.flipped { transform: rotateY(180deg); }
         .card-face { 
@@ -64,7 +63,6 @@
         }
         .card-back { transform: rotateY(180deg); color: var(--accent); }
 
-        /* DESKTOP CONTROLS */
         .desktop-controls { display: none; gap: 15px; margin-top: 10px; }
         @media (min-width: 768px) { .desktop-controls { display: flex; } }
 
@@ -90,7 +88,7 @@
 </div>
 
 <header>
-    <div class="logo">FLASHCLOUD</div>
+    <div class="logo">Flash Pro</div>
     <div style="display:flex; gap:10px">
         <button class="nav-btn" style="padding:10px; border-radius: 50%; background: var(--surface);" onclick="toggleTheme()">🌓</button>
         <button id="logout-btn" class="nav-btn" style="padding:10px; border-radius: 50%; background: var(--surface); display:none" onclick="auth.signOut()">🚪</button>
@@ -130,9 +128,11 @@
             <div class="side-option" id="s-def" onclick="setSide('def')">Переклад</div>
             <div class="side-option" id="s-rand" onclick="setSide('rand')">Рандом</div>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px">
-            <div class="btn-main secondary" style="height:100px; flex-direction:column" onclick="startMode('flip')"><span>🃏</span>Картки</div>
-            <div class="btn-main secondary" style="height:100px; flex-direction:column" onclick="startMode('write')"><span>⌨️</span>Письмо</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px">
+            <div class="btn-main secondary" style="height:80px; flex-direction:column" onclick="startMode('flip')"><span>🃏</span>Картки</div>
+            <div class="btn-main secondary" style="height:80px; flex-direction:column" onclick="startMode('learn')"><span>🧠</span>Заучування</div>
+            <div class="btn-main secondary" style="height:80px; flex-direction:column" onclick="startMode('write')"><span>⌨️</span>Письмо</div>
+            <div class="btn-main secondary" style="height:80px; flex-direction:column" onclick="startMode('test')"><span>📝</span>Тест</div>
         </div>
     </div>
     <div id="study-area" style="display:none">
@@ -158,7 +158,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(), db = firebase.firestore();
-    let curFid = null, deck = [], idx = 0, currentMode = '', side = 'term', startX = 0;
+    let curFid = null, deck = [], studyQueue = [], mistakes = [], idx = 0, currentMode = '', side = 'term', startX = 0;
 
     function setSide(s) {
         side = s;
@@ -215,9 +215,10 @@
         }
     }
 
-    function startMode(m) {
-        if(deck.length<1) return;
-        currentMode = m; idx = 0;
+    function startMode(m, useMistakes = false) {
+        studyQueue = useMistakes ? [...mistakes] : [...deck];
+        if(studyQueue.length < 1) return;
+        currentMode = m; idx = 0; mistakes = [];
         document.getElementById('study-menu').style.display = 'none';
         document.getElementById('study-area').style.display = 'block';
         renderStep();
@@ -225,12 +226,18 @@
 
     function renderStep() {
         const cont = document.getElementById('mode-container');
-        if(idx >= deck.length) {
-            cont.innerHTML = `<h2>Готово! 🎉</h2><button class="btn-main" onclick="nav('study')">До меню</button>`;
+        if(idx >= studyQueue.length) {
+            let html = `<h2>Готово! 🎉</h2>`;
+            if(mistakes.length > 0) {
+                html += `<p style="margin:20px 0; color:var(--muted)">Залишилося вивчити: ${mistakes.length}</p>
+                         <button class="btn-main" onclick="startMode('${currentMode}', true)">Повторити помилки</button>`;
+            }
+            html += `<button class="btn-main secondary" style="margin-top:10px" onclick="nav('study')">До меню</button>`;
+            cont.innerHTML = html;
             return;
         }
         
-        const c = deck[idx];
+        const c = studyQueue[idx];
         let a = c.term, b = c.def;
         if(side === 'def') [a, b] = [b, a];
         if(side === 'rand' && Math.random() > 0.5) [a, b] = [b, a];
@@ -244,11 +251,19 @@
                     </div>
                 </div>
                 <div class="desktop-controls">
-                    <button class="btn-main danger" style="flex:1" onclick="nextCard('wrong')">← Не знаю</button>
-                    <button class="btn-main success" style="flex:1" onclick="nextCard('correct')">Знаю →</button>
+                    <button class="btn-main danger" style="flex:1" onclick="handleFlipResult(false)">← Не знаю</button>
+                    <button class="btn-main success" style="flex:1" onclick="handleFlipResult(true)">Знаю →</button>
                 </div>
             `;
             initSwipe();
+        } else if(currentMode === 'learn' || (currentMode === 'test' && Math.random() > 0.5)) {
+            let options = [b, ...deck.filter(d => (side==='term'?d.def:d.term) !== b).map(d => side==='term'?d.def:d.term).sort(()=>Math.random()-0.5).slice(0,3)].sort(()=>Math.random()-0.5);
+            cont.innerHTML = `
+                <h2 style="text-align:center; margin-bottom:30px">${a}</h2>
+                <div style="display:grid; gap:10px">
+                    ${options.map(opt => `<button class="input-ans" style="margin:0; text-align:left" onclick="checkChoice('${opt}', '${b}')">${opt}</button>`).join('')}
+                </div>
+            `;
         } else {
             cont.innerHTML = `
                 <h2 style="text-align:center; margin-bottom:20px">${a}</h2>
@@ -259,19 +274,36 @@
         }
     }
 
-    function nextCard(type) {
-        const zone = document.getElementById('swipe-zone');
+    function handleFlipResult(known) {
+        if(!known) mistakes.push(studyQueue[idx]);
         const card = document.getElementById('card-obj');
-        if(!zone || !card) return;
-        zone.className = type === 'correct' ? 'card-scene swipe-correct' : 'card-scene swipe-wrong';
         card.style.transition = '0.4s';
-        card.style.transform = (type === 'correct' ? 'translateX(200px) rotate(20deg)' : 'translateX(-200px) rotate(-20deg)') + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
+        card.style.transform = (known ? 'translateX(200px) rotate(20deg)' : 'translateX(-200px) rotate(-20deg)') + (card.classList.contains('flipped') ? ' rotateY(180deg)' : '');
         card.style.opacity = '0';
         setTimeout(() => { idx++; renderStep(); }, 300);
     }
 
+    function checkChoice(user, cor) {
+        if(user !== cor) {
+            mistakes.push(studyQueue[idx]);
+            openPopup("Неправильно", `Правильна відповідь: ${cor}`, () => { idx++; renderStep(); });
+        } else {
+            idx++; renderStep();
+        }
+    }
+
+    function checkWrite(cor) {
+        const val = document.getElementById('q-input').value.trim().toLowerCase();
+        if(val === cor.toLowerCase()) { idx++; renderStep(); }
+        else {
+            mistakes.push(studyQueue[idx]);
+            openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); });
+        }
+    }
+
     function initSwipe() {
         const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
+        if(!zone) return;
         zone.addEventListener('touchstart', e => { startX = e.touches[0].clientX; card.style.transition = '0s'; });
         zone.addEventListener('touchmove', e => {
             let x = e.touches[0].clientX - startX;
@@ -280,24 +312,18 @@
         });
         zone.addEventListener('touchend', e => {
             let x = e.changedTouches[0].clientX - startX;
-            if(Math.abs(x) > 100) nextCard(x > 0 ? 'correct' : 'wrong');
+            if(Math.abs(x) > 100) handleFlipResult(x > 0);
             else { card.style.transition = '0.3s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; zone.className = 'card-scene'; }
         });
     }
 
     window.addEventListener('keydown', e => {
         if(currentMode === 'flip' && document.getElementById('study-area').style.display !== 'none') {
-            if(e.key === 'ArrowLeft') nextCard('wrong');
-            if(e.key === 'ArrowRight') nextCard('correct');
+            if(e.key === 'ArrowLeft') handleFlipResult(false);
+            if(e.key === 'ArrowRight') handleFlipResult(true);
             if(e.key === ' ') { e.preventDefault(); document.getElementById('card-obj').classList.toggle('flipped'); }
         }
     });
-
-    function checkWrite(cor) {
-        const val = document.getElementById('q-input').value.trim().toLowerCase();
-        if(val === cor.toLowerCase()) { idx++; renderStep(); }
-        else openPopup("Помилка", `Правильно: ${cor}`, () => { idx++; renderStep(); });
-    }
 
     function openPopup(t, b, cb) {
         document.getElementById('m-title').innerText = t;
