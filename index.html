@@ -320,6 +320,8 @@
         
         const card = studyQueue[idx];
         let term = card.term, def = card.def;
+
+        // Визначаємо сторону показу
         if(side === 'def') [term, def] = [def, term];
         if(side === 'rand' && Math.random() > 0.5) [term, def] = [def, term];
 
@@ -333,7 +335,14 @@
             initSwipe();
         } else if(currentMode === 'learn' || currentMode === 'test') {
             const correctAns = def;
-            let others = deck.map(d => (side==='def'?d.term:d.def)).filter(v => v !== correctAns);
+            
+            // КЛЮЧОВЕ ВИПРАВЛЕННЯ: 
+            // Визначаємо, з якого списку брати неправильні варіанти (терміни чи переклади)
+            // Ми шукаємо, чи є правильна відповідь у полі 'def' оригінальної колоди
+            const isDefSide = deck.some(d => d.def === correctAns);
+            const pool = isDefSide ? deck.map(d => d.def) : deck.map(d => d.term);
+
+            let others = pool.filter(v => v !== correctAns);
             let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
             
             cont.innerHTML = `<h2 style="text-align:center; margin-bottom:30px">${term}</h2><div style="display:grid; gap:12px">
