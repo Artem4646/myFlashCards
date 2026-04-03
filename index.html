@@ -14,7 +14,7 @@
             --bg: #0d0d0f; --card: #16161a; --accent: #c8f04c; 
             --text: #ffffff; --border: #2a2a35; --danger: #ff4444;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); padding: 20px; overflow-x: hidden; }
         
         .screen { display: none; max-width: 500px; margin: 0 auto; animation: fadeIn 0.3s ease; }
@@ -25,6 +25,7 @@
         input { width: 100%; padding: 15px; margin-bottom: 12px; border-radius: 12px; border: 1px solid var(--border); background: #000; color: #fff; outline: none; font-size: 16px; }
         
         .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); }
         .btn-primary { background: var(--accent); color: #000; }
         .btn-danger { background: var(--danger); color: #fff; }
         .btn-secondary { background: var(--border); color: #fff; }
@@ -52,7 +53,7 @@
         .modal-buttons { display: flex; gap: 10px; }
 
         .loader { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; display: none; z-index: 3000; }
-        .back-btn { background: none; border: none; color: var(--accent); cursor: pointer; margin-bottom: 20px; font-size: 16px; }
+        .back-btn { background: none; border: none; color: var(--accent); cursor: pointer; margin-bottom: 20px; font-size: 16px; font-weight: bold; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -73,18 +74,19 @@
 
     <div id="scr-auth" class="screen active">
         <div class="auth-box">
-            <h1 style="margin-bottom: 20px;">Flash Pro</h1>
+            <h1 style="margin-bottom: 10px;">Flash Pro</h1>
+            <p style="color: #666; margin-bottom: 25px; font-size: 14px;">Ваш персональний словник</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="pass" placeholder="Пароль">
             <button class="btn btn-primary" onclick="handleAuth('login')">Увійти</button>
-            <button class="btn btn-outline" onclick="handleAuth('reg')">Створити акаунт</button>
+            <button class="btn btn-outline" onclick="handleAuth('reg')">Реєстрація</button>
         </div>
     </div>
 
     <div id="scr-main" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2>Мої модулі</h2>
-            <button onclick="logout()" style="background:none; border:none; color:#666; cursor:pointer;">Вихід</button>
+            <button onclick="logout()" style="background:none; border:none; color:#666; cursor:pointer; font-size: 14px;">Вийти</button>
         </div>
         <div id="folders-list"></div>
         <button class="btn btn-primary" style="margin-top: 10px;" onclick="promptAddFolder()">+ Новий модуль</button>
@@ -114,10 +116,18 @@
 
     let currentFolderId = null;
 
-    auth.onAuthStateChanged(user => {
-        toggleLoader(false);
-        if (user) { showScreen('scr-main'); loadFolders(); }
-        else { showScreen('scr-auth'); }
+    // ВИПРАВЛЕННЯ: Встановлюємо збереження сесії LOCAL (назавжди)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(() => {
+        auth.onAuthStateChanged(user => {
+            toggleLoader(false);
+            if (user) { 
+                showScreen('scr-main'); 
+                loadFolders(); 
+            } else { 
+                showScreen('scr-auth'); 
+            }
+        });
     });
 
     // === ЛОГІКА ПОПАПІВ (MODALS) ===
@@ -141,9 +151,36 @@
             closeModal();
         };
         overlay.style.display = 'flex';
+        if(inputPlaceholder) document.getElementById('modal-input').focus();
     }
 
     function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    // === АВТЕНТИФІКАЦІЯ ===
+    async function handleAuth(type) {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('pass').value;
+        if(!email || !pass) return alert("Заповніть пошта/пароль");
+        
+        toggleLoader(true);
+        try {
+            if(type === 'reg') await auth.createUserWithEmailAndPassword(email, pass);
+            else await auth.signInWithEmailAndPassword(email, pass);
+        } catch (e) {
+            alert("Помилка: " + e.message);
+            toggleLoader(false);
+        }
+    }
+
+    function logout() { 
+        showModal({
+            title: "Вихід",
+            text: "Ви впевнені, що хочете вийти з акаунту?",
+            confirmText: "Вийти",
+            confirmClass: "btn-danger",
+            onConfirm: () => { auth.signOut(); }
+        });
+    }
 
     // === ПАПКИ ===
     function promptAddFolder() {
@@ -203,8 +240,6 @@
     async function confirmDeleteFolder(id, event) {
         event.stopPropagation();
         toggleLoader(true);
-        
-        // ПЕРЕВІРКА: чи є всередині картки
         const cardsSnap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(id).collection('cards').limit(1).get();
         
         const performDelete = async () => {
@@ -214,14 +249,12 @@
         };
 
         if (cardsSnap.empty) {
-            // Якщо порожньо - видаляємо без питань
             performDelete();
         } else {
-            // Якщо є картки - показуємо попап
             toggleLoader(false);
             showModal({
                 title: "Видалити модуль?",
-                text: "У цій папці є картки. Ви впевнені, що хочете видалити все?",
+                text: "У цій папці є картки. Ви впевнені?",
                 confirmText: "Видалити",
                 confirmClass: "btn-danger",
                 onConfirm: performDelete
@@ -240,13 +273,13 @@
     function promptAddCard() {
         showModal({
             title: "Додати картку",
-            inputPlaceholder: "Слово / Термін",
+            inputPlaceholder: "Слово (Term)",
             confirmText: "Далі",
             onConfirm: (term) => {
                 if(!term) return;
                 showModal({
                     title: "Переклад",
-                    inputPlaceholder: "Значення...",
+                    inputPlaceholder: "Значення (Definition)",
                     confirmText: "Додати",
                     onConfirm: (def) => { if(def) addCard(term, def); }
                 });
@@ -286,17 +319,11 @@
     }
 
     // === СИСТЕМНІ ===
-    function handleAuth(type) {
-        const email = document.getElementById('email').value.trim();
-        const pass = document.getElementById('pass').value;
-        if(!email || !pass) return alert("Заповни поля");
-        toggleLoader(true);
-        if(type === 'reg') auth.createUserWithEmailAndPassword(email, pass).catch(e => { alert(e.message); toggleLoader(false); });
-        else auth.signInWithEmailAndPassword(email, pass).catch(e => { alert(e.message); toggleLoader(false); });
+    function showScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        document.getElementById(id).classList.add('active'); 
+        window.scrollTo(0,0);
     }
-
-    function logout() { auth.signOut(); }
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
     function toggleLoader(show) { document.getElementById('loading').style.display = show ? 'block' : 'none'; }
 </script>
 </body>
