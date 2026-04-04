@@ -105,12 +105,20 @@ async function selectFolder(id, name) {
 // --- EDITOR ---
 async function loadCards() {
     if (!curFid) return;
-    const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').orderBy('createdAt', 'asc').get();
+    // Обов'язкове сортування за датою створення
+    const snap = await db.collection('users').doc(auth.currentUser.uid)
+        .collection('folders').doc(curFid)
+        .collection('cards')
+        .orderBy('createdAt', 'asc')
+        .get();
+    
     deck = [];
     snap.forEach(doc => deck.push({id: doc.id, ...doc.data()}));
+    
     const list = document.getElementById('cards-list');
     list.innerHTML = '';
     document.querySelector('#n-editor').innerHTML = `<i>✏️</i>Слова (${deck.length})`;
+    
     if (deck.length === 0) {
         list.innerHTML = `<div style="text-align:center; padding: 30px; color:var(--muted)">Модуль порожній</div>`;
         return;
@@ -128,10 +136,15 @@ async function loadCards() {
 
 async function addCard() {
     const t = document.getElementById('in-w'), d = document.getElementById('in-t');
-    if (t.value.trim() && d.value.trim() && curFid) {
-        await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').add({
-            term: t.value.trim(), def: d.value.trim(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+    const term = t.value.trim(), def = d.value.trim();
+    if (term && def && curFid) {
+        await db.collection('users').doc(auth.currentUser.uid)
+            .collection('folders').doc(curFid)
+            .collection('cards').add({
+                term: term, 
+                def: def, 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp() // Мітка часу
+            });
         t.value = ''; d.value = ''; t.focus();
         loadCards();
     }
@@ -183,8 +196,8 @@ function startMode(m, useMistakes = false) {
     let base = useMistakes ? [...currentMistakes] : [...deck];
     if (base.length < 1) return alert("Додай слова!");
     
-    // ПОРЯДОК: якщо side === 'rand', перемішуємо список, інакше йде по порядку
-    studyQueue = (side === 'rand') ? base.sort(() => 0.5 - Math.random()) : base;
+    // Якщо обрано 'rand', перемішуємо. Якщо ні — йдемо за чергою з масиву deck
+    studyQueue = (side === 'rand') ? [...base].sort(() => 0.5 - Math.random()) : [...base];
     
     currentMode = m; idx = 0; currentMistakes = [];
     document.getElementById('study-menu').style.display = 'none';
@@ -226,7 +239,7 @@ function renderStep() {
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
                 <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${questionText}</h2></div>
-                <input type="text" id="q-input" class="input-ans" placeholder="Введіть..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${safeAns}');}">
+                <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${safeAns}');}">
                 <div class="study-controls">${backBtn}<button class="btn-main" onclick="checkWrite('${safeAns}')">Перевірити</button></div>`;
             setTimeout(() => document.getElementById('q-input')?.focus(), 200);
         } else {
@@ -254,14 +267,19 @@ function checkChoice(btn, user, cor) {
     if (!isCor) currentMistakes.push(studyQueue[idx]);
     btn.style.backgroundColor = isCor ? 'var(--success)' : 'var(--danger)';
     btn.style.color = 'white';
-    if (!isCor) document.querySelectorAll('#mode-container button').forEach(b => { if(b.innerText === cor.replace(/\\'/g, "'")) b.style.backgroundColor = 'var(--success)'; });
+    if (!isCor) document.querySelectorAll('#mode-container button').forEach(b => { 
+        if(b.innerText === cor.replace(/\\'/g, "'")) b.style.backgroundColor = 'var(--success)'; 
+    });
     setTimeout(() => { idx++; renderStep(); }, isCor ? 600 : 1200);
 }
 
 function checkWrite(cor) {
     const input = document.getElementById('q-input');
     const isCor = input.value.trim().toLowerCase() === cor.trim().toLowerCase();
-    if (!isCor) { currentMistakes.push(studyQueue[idx]); input.value = "Правильно: " + cor; }
+    if (!isCor) { 
+        currentMistakes.push(studyQueue[idx]); 
+        input.value = "Правильно: " + cor; 
+    }
     input.classList.add(isCor ? 'correct' : 'wrong');
     setTimeout(() => { idx++; renderStep(); }, isCor ? 600 : 1500);
 }
@@ -269,13 +287,16 @@ function checkWrite(cor) {
 function handleFlipResult(known) {
     if (!known) currentMistakes.push(studyQueue[idx]);
     const card = document.getElementById('card-obj');
-    card.style.transform = `translateX(${known ? 400 : -400}px) rotate(${known ? 30 : -30}deg) ${card.classList.contains('flipped')?'rotateY(180deg)':''}`;
-    card.style.opacity = '0';
+    if (card) {
+        card.style.transform = `translateX(${known ? 400 : -400}px) rotate(${known ? 30 : -30}deg) ${card.classList.contains('flipped')?'rotateY(180deg)':''}`;
+        card.style.opacity = '0';
+    }
     setTimeout(() => { idx++; renderStep(); }, 400);
 }
 
 function initSwipe() {
     const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
+    if (!zone || !card) return;
     let sX, sY, sT;
     zone.ontouchstart = e => { sX = e.touches[0].clientX; sY = e.touches[0].clientY; sT = Date.now(); card.style.transition = '0s'; };
     zone.ontouchmove = e => { 
