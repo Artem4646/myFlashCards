@@ -237,7 +237,10 @@ function renderStep() {
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
     
-    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}')" style="margin-left:8px; font-size:1.2rem; vertical-align:middle;">🔊</button>`;
+    // Покращена кнопка озвучки з блокуванням перегортання
+    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" 
+        onclick="event.preventDefault(); event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}');" 
+        style="margin-left:12px; font-size:1.5rem; vertical-align:middle; cursor:pointer; position:relative; z-index:10;">🔊</button>`;
     
     let displayQuestion = answerIsDef ? `${questionText} ${voiceBtnHtml(card.term)}` : questionText;
     let displayAnswer = !answerIsDef ? `${answerText} ${voiceBtnHtml(card.term)}` : answerText;
@@ -247,10 +250,18 @@ function renderStep() {
 
     if (currentMode === 'flip') {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
-            <div class="card-scene" id="swipe-zone"><div class="card-inner" id="card-obj" onclick="this.classList.toggle('flipped')">
-                <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold;">${displayQuestion}</div></div>
-                <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold;">${displayAnswer}</div></div>
-            </div></div>
+            <div class="card-scene" id="swipe-zone">
+                <div class="card-inner" id="card-obj" onclick="if(!event.target.closest('.voice-btn')) this.classList.toggle('flipped')">
+                    <div class="card-face">
+                        <div class="card-label">Питання</div>
+                        <div style="font-size:1.5rem; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 10px;">${displayQuestion}</div>
+                    </div>
+                    <div class="card-back card-face">
+                        <div class="card-label">Відповідь</div>
+                        <div style="font-size:1.5rem; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 10px;">${displayAnswer}</div>
+                    </div>
+                </div>
+            </div>
             <div class="study-controls">${backBtn}<div class="flip-btns">
                 <button class="btn-main secondary" onclick="handleFlipResult(false)">❌</button>
                 <button class="btn-main" style="background:var(--success)" onclick="handleFlipResult(true)">✅</button>
@@ -260,7 +271,7 @@ function renderStep() {
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2 style="display:flex; align-items:center; justify-content:center;">${displayQuestion}</h2></div>
                 <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${safeAns}');}">
                 <div class="study-controls">${backBtn}<button class="btn-main" onclick="checkWrite('${safeAns}')">Перевірити</button></div>`;
             setTimeout(() => document.getElementById('q-input')?.focus(), 200);
@@ -268,7 +279,7 @@ function renderStep() {
             const pool = deck.map(d => answerIsDef ? d.def : d.term);
             let opts = [answerText, ...pool.filter(v => v !== answerText).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'🧠 Вибір'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2 style="display:flex; align-items:center; justify-content:center;">${displayQuestion}</h2></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px">
                     ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${safeAns}')">${o}</button>`).join('')}
                 </div><div class="study-controls">${backBtn}</div>`;
