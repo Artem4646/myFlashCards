@@ -242,38 +242,28 @@
 
     const card = studyQueue[idx];
     
-    // Визначаємо, яка сторона зараз є Питанням, а яка — Відповіддю
-    let questionText, answerText, answerIsDef;
-
-    if (side === 'rand') {
+    // 1. ВИЗНАЧАЄМО СТОРОНУ (Рандом сторін)
+    // Якщо режим 'rand' або ми в загальному Тесті — вибираємо сторону випадково
+    let answerIsDef;
+    if (side === 'rand' || currentMode === 'test') {
         answerIsDef = Math.random() > 0.5;
     } else {
-        answerIsDef = (side === 'term'); // якщо вчимо 'term', то відповідь — це 'def' (переклад)
+        answerIsDef = (side === 'term'); 
     }
 
-    if (answerIsDef) {
-        questionText = card.term;
-        answerText = card.def;
-    } else {
-        questionText = card.def;
-        answerText = card.term;
-    }
+    let questionText = answerIsDef ? card.term : card.def;
+    let answerText = answerIsDef ? card.def : card.term;
 
     const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
 
+    // 2. ЛОГІКА РЕЖИМІВ
     if (currentMode === 'flip') {
         cont.innerHTML = `
         <p style="text-align:center; color:var(--muted); margin-bottom:15px; font-weight:600">${idx + 1} / ${studyQueue.length}</p>
         <div class="card-scene" id="swipe-zone">
             <div class="card-inner" id="card-obj" onclick="if(window.innerWidth > 768) this.classList.toggle('flipped')">
-                <div class="card-face">
-                    <div class="card-label">Питання</div>
-                    ${questionText}
-                </div>
-                <div class="card-back card-face">
-                    <div class="card-label">Відповідь</div>
-                    ${answerText}
-                </div>
+                <div class="card-face"><div class="card-label">Питання</div>${questionText}</div>
+                <div class="card-back card-face"><div class="card-label">Відповідь</div>${answerText}</div>
             </div>
         </div>
         <div class="study-controls">
@@ -284,44 +274,56 @@
             </div>
         </div>`;
         initSwipe();
-    } else if (currentMode === 'learn' || currentMode === 'test') {
-        // Створюємо пул варіантів тією ж мовою, що і правильна відповідь
-        const pool = deck.map(d => answerIsDef ? d.def : d.term);
-        let others = pool.filter(v => v !== answerText);
-        
-        // Перемішуємо та беремо 3 випадкових + 1 правильний
-        let opts = [answerText, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
 
-        cont.innerHTML = `
-        <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx + 1} / ${studyQueue.length}</p>
-        <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
-            <h2 style="font-size:2rem">${questionText}</h2>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px">
-            ${opts.map(o => `
-                <button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${answerText.replace(/'/g, "\\")}')">
-                    ${o}
-                </button>
-            `).join('')}
-        </div>
-        <div class="study-controls">
-            ${backBtn}
-            <div style="flex:1"></div>
-        </div>`;
-    } else if (currentMode === 'write') {
-        cont.innerHTML = `
-        <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx + 1} / ${studyQueue.length}</p>
-        <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
-            <h2 style="font-size:2rem">${questionText}</h2>
-        </div>
-        <div class="input-group">
-            <input type="text" id="q-input" class="input-ans" placeholder="Твій переклад..." autocomplete="off">
-        </div>
-        <div class="study-controls">
-            ${backBtn}
-            <button class="btn-main" onclick="checkWrite('${answerText.replace(/'/g, "\\")}')">Перевірити</button>
-        </div>`;
-        setTimeout(() => document.getElementById('q-input')?.focus(), 200);
+    } else {
+        // ВИЗНАЧАЄМО ТИП ЗАВДАННЯ (Рандом типу: Вибір або Письмо)
+        // В режимі 'test' шанс 50/50. В інших режимах — згідно з назвою.
+        let isWriteType = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
+
+        if (isWriteType) {
+            // ФОРМАТ: ПИСЬМО
+            cont.innerHTML = `
+            <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">
+                ${currentMode === 'test' ? '📝 ТЕСТ: Письмо' : '⌨️ Письмо'} (${idx + 1} / ${studyQueue.length})
+            </p>
+            <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:2rem">${questionText}</h2>
+            </div>
+            <div class="input-group">
+                <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off">
+            </div>
+            <div class="study-controls">
+                ${backBtn}
+                <button class="btn-main" onclick="checkWrite('${answerText.replace(/'/g, "\\'")}')">Перевірити</button>
+            </div>`;
+            setTimeout(() => document.getElementById('q-input')?.focus(), 200);
+
+        } else {
+            // ФОРМАТ: ВИБІР ВАРІАНТІВ
+            // Пул варіантів беремо з тієї ж мови, що і правильна відповідь
+            const pool = deck.map(d => answerIsDef ? d.def : d.term);
+            let others = pool.filter(v => v !== answerText);
+            let opts = [answerText, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+
+            cont.innerHTML = `
+            <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">
+                ${currentMode === 'test' ? '📝 ТЕСТ: Вибір' : '🧠 Вибір'} (${idx + 1} / ${studyQueue.length})
+            </p>
+            <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
+                <h2 style="font-size:2rem">${questionText}</h2>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px">
+                ${opts.map(o => `
+                    <button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${answerText.replace(/'/g, "\\")}')">
+                        ${o}
+                    </button>
+                `).join('')}
+            </div>
+            <div class="study-controls">
+                ${backBtn}
+                <div style="flex:1"></div>
+            </div>`;
+        }
     }
 }
 
