@@ -1,8 +1,8 @@
 :root {
             /* New Sophisticated Dark Palette */
             --bg: #030712;
-            --surface: rgba(17, 24, 39, 0.7);
-            --surface-h: rgba(31, 41, 55, 0.9);
+            --surface: #95e6cbcc;
+            --surface-h: #f5898975;
             --text: #f3f4f6;
             --muted: #9ca3af;
 
@@ -15,7 +15,7 @@
             --glass-border: rgba(255, 255, 255, 0.08);
             --danger: #ef4444;
             --danger-glow: rgba(239, 68, 68, 0.3);
-            --success: #10b981;
+            --success: #95e6cb;
             --success-glow: rgba(16, 185, 129, 0.3);
             --radius-lg: 28px;
             --radius-md: 18px;
