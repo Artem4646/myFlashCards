@@ -601,7 +601,7 @@
         .study-controls {
             display: flex;
         }
-            .voice-btn {
+            .btn-icon.voice-btn {
                 position: absolute;
     top: 10px;
     right: 10px;
@@ -612,7 +612,7 @@
     background-color: rgba(255, 255, 255, 0.3);
     vertical-align: middle;
 }
-body.light-theme .voice-btn {
+body.light-theme .btn-icon.voice-btn {
             position: absolute;
     top: 10px;
     right: 10px;
