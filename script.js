@@ -282,7 +282,9 @@
         let isWriteType = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
 
         if (isWriteType) {
-            // ФОРМАТ: ПИСЬМО (з підтримкою Enter)
+            // ФОРМАТ: ПИСЬМО
+            const safeAnswer = answerText.replace(/'/g, "\\'"); // Екрануємо лапки
+
             cont.innerHTML = `
             <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">
                 ${currentMode === 'test' ? '📝 ТЕСТ: Письмо' : '⌨️ Письмо'} (${idx + 1} / ${studyQueue.length})
@@ -294,13 +296,18 @@
                 <input type="text" id="q-input" class="input-ans" 
                        placeholder="Введіть переклад..." 
                        autocomplete="off"
-                       onkeydown="if(event.key === 'Enter') checkWrite('${safeAnswer}')">
+                       onkeydown="if(event.key === 'Enter') { event.preventDefault(); checkWrite('${safeAnswer}'); }">
             </div>
             <div class="study-controls">
                 ${backBtn}
                 <button class="btn-main" onclick="checkWrite('${safeAnswer}')">Перевірити</button>
             </div>`;
-            setTimeout(() => document.getElementById('q-input')?.focus(), 200);
+            
+            // Фокусуємося на полі введення
+            setTimeout(() => {
+                const input = document.getElementById('q-input');
+                if (input) input.focus();
+            }, 200);
 
         } else {
             // ФОРМАТ: ВИБІР ВАРІАНТІВ (однією мовою)
