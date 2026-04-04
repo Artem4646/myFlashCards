@@ -45,9 +45,7 @@ async function handleAuth() {
     } catch (err) { alert(err.message); }
 }
 
-function logout() {
-    auth.signOut();
-}
+function logout() { auth.signOut(); }
 
 // --- FOLDERS ---
 async function loadFolders() {
@@ -235,7 +233,6 @@ function renderStep() {
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
     
-    // Кнопка з e.stopImmediatePropagation() для повного контролю
     const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" 
         onclick="event.stopImmediatePropagation(); speak('${text.replace(/'/g, "\\'")}');" 
         style="margin-left:10px; font-size:1.3rem; vertical-align:middle; cursor:pointer; position:relative; z-index:1000;">🔊</button>`;
@@ -249,7 +246,7 @@ function renderStep() {
     if (currentMode === 'flip') {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone">
-                <div class="card-inner" id="card-obj" onclick="if(!event.target.closest('.voice-btn')) { this.style.transition='0.6s'; this.classList.toggle('flipped'); }">
+                <div class="card-inner" id="card-obj">
                     <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayQuestion}</div></div>
                     <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayAnswer}</div></div>
                 </div>
@@ -260,7 +257,6 @@ function renderStep() {
             </div></div>`;
         initSwipe();
     } else {
-        // ... (код для тестів та письма залишається без змін)
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
@@ -327,7 +323,7 @@ function initSwipe() {
     let sX, sY, sT;
 
     zone.ontouchstart = e => {
-        if (e.target.closest('.voice-btn')) return; // Не ініціюємо свайп, якщо тиснули на звук
+        if (e.target.closest('.voice-btn')) return;
         sX = e.touches[0].clientX; 
         sY = e.touches[0].clientY; 
         sT = Date.now(); 
@@ -347,19 +343,27 @@ function initSwipe() {
         if (e.target.closest('.voice-btn')) return;
         let dX = e.changedTouches[0].clientX - sX, dT = Date.now() - sT;
         
-        // Якщо це був просто короткий тап (не свайп)
-        if (dT < 250 && Math.abs(dX) < 15) { 
-            card.style.transition = '0.6s'; 
+        card.style.transition = '0.6s'; 
+
+        // Якщо це був тап (короткий час і мала відстань)
+        if (dT < 250 && Math.abs(dX) < 20) { 
             card.classList.toggle('flipped'); 
             return; 
         }
         
-        // Якщо це був свайп вбік
+        // Якщо це був свайп
         if (Math.abs(dX) > 120) {
             handleFlipResult(dX > 0);
         } else { 
-            card.style.transition = '0.4s'; 
             card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; 
+        }
+    };
+
+    // Підтримка кліку мишкою для ПК
+    zone.onclick = e => {
+        if (!e.target.closest('.voice-btn')) {
+            card.style.transition = '0.6s';
+            card.classList.toggle('flipped');
         }
     };
 }
