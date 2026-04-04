@@ -228,40 +228,34 @@ function renderStep() {
     }
 
     const card = studyQueue[idx];
-    // Визначаємо, що ми показуємо спочатку: термін чи дефініцію
+    // answerIsDef = true означає, що Питання — це Англійська (term)
     let answerIsDef = (side === 'rand' || currentMode === 'test') ? Math.random() > 0.5 : (side === 'term');
     
-    // Текст для кожної сторони
-    let termText = card.term;
-    let defText = card.def;
-    
-    // Створюємо HTML кнопки озвучки (Тільки для англійського тексту)
-    const voiceBtnHtml = `<button class="btn-icon voice-btn" 
-        onclick="event.stopPropagation(); speak('${termText.replace(/'/g, "\\'")}');" 
-        style="margin-left:10px; font-size:1.3rem; vertical-align:middle; cursor:pointer; position:relative; z-index:1000;">🔊</button>`;
+    // Функція-помічник для створення кнопки (викликаємо її тільки для англійської)
+    const getVoiceBtn = (text) => `<button class="btn-icon voice-btn" 
+        onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}');" 
+        style="display:inline-flex; align-items:center; justify-content:center; margin-left:8px; font-size:1.2rem; cursor:pointer; background:none; border:none; vertical-align:middle;">🔊</button>`;
 
-    const safeAns = (answerIsDef ? defText : termText).replace(/'/g, "\\'");
     const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
 
     if (currentMode === 'flip') {
-        // Формуємо вміст передньої та задньої сторони
-        // Якщо питання - термін, додаємо кнопку. Якщо питання - переклад, кнопки НЕМАЄ.
-        let frontContent = answerIsDef ? `${termText} ${voiceBtnHtml}` : defText;
-        let backContent = !answerIsDef ? `${termText} ${voiceBtnHtml}` : defText;
+        // Формуємо контент: якщо це Англійська — додаємо кнопку, якщо Українська — ні.
+        let frontHTML = answerIsDef ? `${card.term}${getVoiceBtn(card.term)}` : card.def;
+        let backHTML = !answerIsDef ? `${card.term}${getVoiceBtn(card.term)}` : card.def;
 
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone">
-                <div class="card-inner" id="card-obj">
+                <div class="card-inner" id="card-obj" onclick="flipCard(event)">
                     <div class="card-face">
                         <div class="card-label">Питання</div>
-                        <div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">
-                            ${frontContent}
+                        <div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center; height:100%;">
+                            ${frontHTML}
                         </div>
                     </div>
                     <div class="card-back card-face">
                         <div class="card-label">Відповідь</div>
-                        <div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">
-                            ${backContent}
+                        <div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center; height:100%;">
+                            ${backHTML}
                         </div>
                     </div>
                 </div>
@@ -272,23 +266,28 @@ function renderStep() {
             </div></div>`;
         initSwipe();
     } else {
-        // Логіка для інших режимів (Write/Test)
-        let displayQuestion = answerIsDef ? `${termText} ${voiceBtnHtml}` : defText;
+        // Логіка для тестів (Write/Choice) — тут так само додаємо кнопку тільки до англійської
+        let questionHTML = answerIsDef ? `${card.term}${getVoiceBtn(card.term)}` : card.def;
+        let correctAns = answerIsDef ? card.def : card.term;
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
-                <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${safeAns}');}">
-                <div class="study-controls">${backBtn}<button class="btn-main" onclick="checkWrite('${safeAns}')">Перевірити</button></div>`;
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;">
+                    <h2 style="display:flex; align-items:center; justify-content:center;">${questionHTML}</h2>
+                </div>
+                <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${correctAns.replace(/'/g, "\\'")}');}">
+                <div class="study-controls">${backBtn}<button class="btn-main" onclick="checkWrite('${correctAns.replace(/'/g, "\\'")}')">Перевірити</button></div>`;
             setTimeout(() => document.getElementById('q-input')?.focus(), 200);
         } else {
             const pool = deck.map(d => answerIsDef ? d.def : d.term);
-            let opts = [answerIsDef ? defText : termText, ...pool.filter(v => v !== (answerIsDef ? defText : termText)).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
+            let opts = [correctAns, ...pool.filter(v => v !== correctAns).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'🧠 Вибір'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;">
+                    <h2 style="display:flex; align-items:center; justify-content:center;">${questionHTML}</h2>
+                </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px">
-                    ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${safeAns}')">${o}</button>`).join('')}
+                    ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\'")} balance')">${o}</button>`).join('')}
                 </div><div class="study-controls">${backBtn}</div>`;
         }
     }
