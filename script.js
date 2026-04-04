@@ -326,3 +326,12 @@ function toggleTheme() {
     localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
 }
 if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+
+function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel(); // Зупинити чергу, якщо натиснуто кілька разів
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9; 
+    window.speechSynthesis.speak(utterance);
+}
