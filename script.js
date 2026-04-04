@@ -234,7 +234,7 @@ function renderStep() {
     // Функція-помічник для створення кнопки (викликаємо її тільки для англійської)
     const getVoiceBtn = (text) => `<button class="btn-icon voice-btn" 
         onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}');" 
-        style="display:inline-flex; align-items:center; justify-content:center; margin-left:8px; font-size:1.2rem; cursor:pointer; background:none; border:none; vertical-align:middle;">🔊</button>`;
+        style="display:inline-flex; align-items:center; justify-content:center; margin-left:8px; font-size:1.2rem; cursor:pointer; vertical-align:middle;">🔊</button>`;
 
     const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
 
