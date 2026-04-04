@@ -218,16 +218,26 @@ function renderStep() {
 
     const card = studyQueue[idx];
     let answerIsDef = (side === 'rand' || currentMode === 'test') ? Math.random() > 0.5 : (side === 'term');
+    
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
+    
+    // Створюємо кнопку озвучки, якщо текст англійською (якщо це термін)
+    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}')" style="margin-left:8px; font-size:1.2rem; vertical-align:middle;">🔊</button>`;
+    
+    // Додаємо кнопку до питання, якщо воно англійською
+    let displayQuestion = answerIsDef ? `${questionText} ${voiceBtnHtml(card.term)}` : questionText;
+    // Додаємо кнопку до відповіді на звороті картки, якщо відповідь англійською
+    let displayAnswer = !answerIsDef ? `${answerText} ${voiceBtnHtml(card.term)}` : answerText;
+
     const safeAns = answerText.replace(/'/g, "\\'");
     const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
 
     if (currentMode === 'flip') {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone"><div class="card-inner" id="card-obj" onclick="this.classList.toggle('flipped')">
-                <div class="card-face"><div class="card-label">Питання</div>${questionText}</div>
-                <div class="card-back card-face"><div class="card-label">Відповідь</div>${answerText}</div>
+                <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold;">${displayQuestion}</div></div>
+                <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold;">${displayAnswer}</div></div>
             </div></div>
             <div class="study-controls">${backBtn}<div class="flip-btns">
                 <button class="btn-main secondary" onclick="handleFlipResult(false)">❌</button>
@@ -238,7 +248,7 @@ function renderStep() {
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${questionText}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
                 <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${safeAns}');}">
                 <div class="study-controls">${backBtn}<button class="btn-main" onclick="checkWrite('${safeAns}')">Перевірити</button></div>`;
             setTimeout(() => document.getElementById('q-input')?.focus(), 200);
@@ -246,7 +256,7 @@ function renderStep() {
             const pool = deck.map(d => answerIsDef ? d.def : d.term);
             let opts = [answerText, ...pool.filter(v => v !== answerText).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'🧠 Вибір'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${questionText}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px">
                     ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${safeAns}')">${o}</button>`).join('')}
                 </div><div class="study-controls">${backBtn}</div>`;
