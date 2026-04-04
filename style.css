@@ -1,8 +1,8 @@
 :root {
             /* New Sophisticated Dark Palette */
             --bg: #030712;
-            --surface: #95e6cbcc;
-            --surface-h: #f5898975;
+            --surface: rgba(17, 24, 39, 0.7);
+            --surface-h: rgba(31, 41, 55, 0.9);
             --text: #f3f4f6;
             --muted: #9ca3af;
 
@@ -28,7 +28,7 @@
         body.light-theme {
             --bg: #f9fafb;
             --surface: rgba(255, 255, 255, 0.8);
-            --surface-h: rgba(243, 244, 246, 0.9);
+            --surface-h: rgba(255, 132, 132, 0.6);
             --text: #111827;
             --muted: #6b7280;
             --border: rgba(0, 0, 0, 0.05);
