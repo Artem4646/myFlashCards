@@ -229,26 +229,24 @@ function renderStep() {
 
     const card = studyQueue[idx];
     let answerIsDef = (side === 'rand' || currentMode === 'test') ? Math.random() > 0.5 : (side === 'term');
-    
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
     
     const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" 
-        onclick="event.stopImmediatePropagation(); speak('${text.replace(/'/g, "\\'")}');" 
+        onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}');" 
         style="margin-left:10px; font-size:1.3rem; vertical-align:middle; cursor:pointer; position:relative; z-index:1000;">🔊</button>`;
     
     let displayQuestion = answerIsDef ? `${questionText} ${voiceBtnHtml(card.term)}` : questionText;
     let displayAnswer = !answerIsDef ? `${answerText} ${voiceBtnHtml(card.term)}` : answerText;
-
     const safeAns = answerText.replace(/'/g, "\\'");
     const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
 
     if (currentMode === 'flip') {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone">
-                <div class="card-inner" id="card-obj" onclick="flipCard(event)">
-                    <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayQuestion}</div></div>
-                    <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayAnswer}</div></div>
+                <div class="card-inner" id="card-obj">
+                    <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px;">${displayQuestion}</div></div>
+                    <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px;">${displayAnswer}</div></div>
                 </div>
             </div>
             <div class="study-controls">${backBtn}<div class="flip-btns">
@@ -257,7 +255,7 @@ function renderStep() {
             </div></div>`;
         initSwipe();
     } else {
-        // Код для Test/Write (без змін)
+        // ... код для інших режимів (без змін)
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
@@ -323,6 +321,10 @@ function initSwipe() {
     if (!zone || !card) return;
     let sX, sY, sT;
 
+    // Обробка мишки для ПК
+    zone.onclick = e => flipCard(e);
+
+    // Обробка тачу для телефонів
     zone.ontouchstart = e => {
         if (e.target.closest('.voice-btn')) return;
         sX = e.touches[0].clientX; 
@@ -346,11 +348,17 @@ function initSwipe() {
         
         card.style.transition = '0.6s'; 
 
-        // Якщо це був довгий свайп вбік
-        if (Math.abs(dX) > 100 && dT > 100) {
+        // Якщо це просто короткий тап (перевертання)
+        if (dT < 250 && Math.abs(dX) < 20) {
+            e.preventDefault(); // КРИТИЧНО: запобігає дублюванню кліку на телефонах
+            card.classList.toggle('flipped');
+            return;
+        }
+        
+        // Якщо це довгий свайп (сортування)
+        if (Math.abs(dX) > 100) {
             handleFlipResult(dX > 0);
         } else { 
-            // Повертаємо карту в нормальний стан (але зберігаємо flipped, якщо він був)
             card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; 
         }
     };
@@ -362,10 +370,10 @@ function toggleTheme() {
 }
 if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
 
-function flipCard(event) {
-    // Якщо натиснули на кнопку звуку — нічого не робимо (озвучка спрацює сама)
-    if (event.target.closest('.voice-btn')) return;
-
+function flipCard(e) {
+    // Зупиняємо все, якщо це кнопка звуку
+    if (e.target.closest('.voice-btn')) return;
+    
     const card = document.getElementById('card-obj');
     if (card) {
         card.style.transition = '0.6s';
