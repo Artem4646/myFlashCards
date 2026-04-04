@@ -261,7 +261,7 @@ function renderStep() {
                 </div>
             </div>
             <div class="study-controls">${backBtn}<div class="flip-btns">
-                <button class="btn-main secondary" onclick="handleFlipResult(false)">❌</button>
+                <button class="btn-main secondary wrong" onclick="handleFlipResult(false)">❌</button>
                 <button class="btn-main" style="background:var(--success)" onclick="handleFlipResult(true)">✅</button>
             </div></div>`;
         initSwipe();
