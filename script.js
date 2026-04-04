@@ -45,8 +45,13 @@ async function handleAuth() {
     } catch (err) { alert(err.message); }
 }
 
+function logout() {
+    auth.signOut();
+}
+
 // --- FOLDERS ---
 async function loadFolders() {
+    if (!auth.currentUser) return;
     try {
         const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').orderBy('createdAt', 'asc').get();
         const list = document.getElementById('folders-list');
@@ -104,34 +109,36 @@ async function selectFolder(id, name) {
 
 // --- EDITOR ---
 async function loadCards() {
-    if (!curFid) return;
-    // Обов'язкове сортування за датою створення
-    const snap = await db.collection('users').doc(auth.currentUser.uid)
-        .collection('folders').doc(curFid)
-        .collection('cards')
-        .orderBy('createdAt', 'asc')
-        .get();
-    
-    deck = [];
-    snap.forEach(doc => deck.push({id: doc.id, ...doc.data()}));
-    
-    const list = document.getElementById('cards-list');
-    list.innerHTML = '';
-    document.querySelector('#n-editor').innerHTML = `<i>✏️</i>Слова (${deck.length})`;
-    
-    if (deck.length === 0) {
-        list.innerHTML = `<div style="text-align:center; padding: 30px; color:var(--muted)">Модуль порожній</div>`;
-        return;
-    }
-    deck.forEach(c => {
-        list.innerHTML += `<div class="item-row">
-            <div style="flex:1"><b style="color:var(--accent-solid)">${c.term}</b> → ${c.def}</div>
-            <div style="display:flex; gap:8px">
-                <button class="btn-icon" onclick="uiEditCard('${c.id}', '${c.term.replace(/'/g, "\\'")}', '${c.def.replace(/'/g, "\\")}')">✏️</button>
-                <button class="btn-icon btn-danger" onclick="uiDeleteCard('${c.id}')">🗑️</button>
-            </div>
-        </div>`;
-    });
+    if (!curFid || !auth.currentUser) return;
+    try {
+        const snap = await db.collection('users').doc(auth.currentUser.uid)
+            .collection('folders').doc(curFid)
+            .collection('cards')
+            .orderBy('createdAt', 'asc')
+            .get();
+        
+        deck = [];
+        snap.forEach(doc => deck.push({id: doc.id, ...doc.data()}));
+        
+        const list = document.getElementById('cards-list');
+        list.innerHTML = '';
+        const editorBtn = document.querySelector('#n-editor');
+        if (editorBtn) editorBtn.innerHTML = `<i>✏️</i>Слова (${deck.length})`;
+        
+        if (deck.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding: 30px; color:var(--muted)">Модуль порожній</div>`;
+            return;
+        }
+        deck.forEach(c => {
+            list.innerHTML += `<div class="item-row">
+                <div style="flex:1"><b style="color:var(--accent-solid)">${c.term}</b> → ${c.def}</div>
+                <div style="display:flex; gap:8px">
+                    <button class="btn-icon" onclick="uiEditCard('${c.id}', '${c.term.replace(/'/g, "\\'")}', '${c.def.replace(/'/g, "\\")}')">✏️</button>
+                    <button class="btn-icon btn-danger" onclick="uiDeleteCard('${c.id}')">🗑️</button>
+                </div>
+            </div>`;
+        });
+    } catch (e) { console.warn("Сортування ще не активоване або картки старі."); }
 }
 
 async function addCard() {
@@ -143,7 +150,7 @@ async function addCard() {
             .collection('cards').add({
                 term: term, 
                 def: def, 
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() // Мітка часу
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         t.value = ''; d.value = ''; t.focus();
         loadCards();
@@ -196,13 +203,21 @@ function startMode(m, useMistakes = false) {
     let base = useMistakes ? [...currentMistakes] : [...deck];
     if (base.length < 1) return alert("Додай слова!");
     
-    // Якщо обрано 'rand', перемішуємо. Якщо ні — йдемо за чергою з масиву deck
     studyQueue = (side === 'rand') ? [...base].sort(() => 0.5 - Math.random()) : [...base];
     
     currentMode = m; idx = 0; currentMistakes = [];
     document.getElementById('study-menu').style.display = 'none';
     document.getElementById('study-area').style.display = 'block';
     renderStep();
+}
+
+function speak(text) {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9; 
+    window.speechSynthesis.speak(utterance);
 }
 
 function renderStep() {
@@ -222,12 +237,9 @@ function renderStep() {
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
     
-    // Створюємо кнопку озвучки, якщо текст англійською (якщо це термін)
     const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}')" style="margin-left:8px; font-size:1.2rem; vertical-align:middle;">🔊</button>`;
     
-    // Додаємо кнопку до питання, якщо воно англійською
     let displayQuestion = answerIsDef ? `${questionText} ${voiceBtnHtml(card.term)}` : questionText;
-    // Додаємо кнопку до відповіді на звороті картки, якщо відповідь англійською
     let displayAnswer = !answerIsDef ? `${answerText} ${voiceBtnHtml(card.term)}` : answerText;
 
     const safeAns = answerText.replace(/'/g, "\\'");
@@ -285,6 +297,7 @@ function checkChoice(btn, user, cor) {
 
 function checkWrite(cor) {
     const input = document.getElementById('q-input');
+    if (!input) return;
     const isCor = input.value.trim().toLowerCase() === cor.trim().toLowerCase();
     if (!isCor) { 
         currentMistakes.push(studyQueue[idx]); 
@@ -326,12 +339,3 @@ function toggleTheme() {
     localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
 }
 if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
-
-function speak(text) {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel(); // Зупинити чергу, якщо натиснуто кілька разів
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9; 
-    window.speechSynthesis.speak(utterance);
-}
