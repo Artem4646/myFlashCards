@@ -235,8 +235,10 @@ function renderStep() {
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
     
-    // Кнопка озвучки з блокуванням спливання події
-    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}')" style="margin-left:10px; font-size:1.3rem; vertical-align:middle; cursor:pointer;">🔊</button>`;
+    // Кнопка з e.stopImmediatePropagation() для повного контролю
+    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" 
+        onclick="event.stopImmediatePropagation(); speak('${text.replace(/'/g, "\\'")}');" 
+        style="margin-left:10px; font-size:1.3rem; vertical-align:middle; cursor:pointer; position:relative; z-index:1000;">🔊</button>`;
     
     let displayQuestion = answerIsDef ? `${questionText} ${voiceBtnHtml(card.term)}` : questionText;
     let displayAnswer = !answerIsDef ? `${answerText} ${voiceBtnHtml(card.term)}` : answerText;
@@ -247,9 +249,9 @@ function renderStep() {
     if (currentMode === 'flip') {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone">
-                <div class="card-inner" id="card-obj" onclick="if(!event.target.closest('.voice-btn')) this.classList.toggle('flipped')">
-                    <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px;">${displayQuestion}</div></div>
-                    <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px;">${displayAnswer}</div></div>
+                <div class="card-inner" id="card-obj" onclick="if(!event.target.closest('.voice-btn')) { this.style.transition='0.6s'; this.classList.toggle('flipped'); }">
+                    <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayQuestion}</div></div>
+                    <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayAnswer}</div></div>
                 </div>
             </div>
             <div class="study-controls">${backBtn}<div class="flip-btns">
@@ -258,6 +260,7 @@ function renderStep() {
             </div></div>`;
         initSwipe();
     } else {
+        // ... (код для тестів та письма залишається без змін)
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
@@ -322,23 +325,42 @@ function initSwipe() {
     const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
     if (!zone || !card) return;
     let sX, sY, sT;
-    zone.ontouchstart = e => { sX = e.touches[0].clientX; sY = e.touches[0].clientY; sT = Date.now(); card.style.transition = '0s'; };
-    zone.ontouchmove = e => { 
-        let x = e.touches[0].clientX - sX, y = e.touches[0].clientY - sY;
-        if (Math.abs(x) > Math.abs(y)) { e.preventDefault(); card.style.transform = `translateX(${x}px) rotate(${x/20}deg) ${card.classList.contains('flipped')?'rotateY(180deg)':''}`; }
+
+    zone.ontouchstart = e => {
+        if (e.target.closest('.voice-btn')) return; // Не ініціюємо свайп, якщо тиснули на звук
+        sX = e.touches[0].clientX; 
+        sY = e.touches[0].clientY; 
+        sT = Date.now(); 
+        card.style.transition = '0s'; 
     };
+
+    zone.ontouchmove = e => { 
+        if (e.target.closest('.voice-btn')) return;
+        let x = e.touches[0].clientX - sX, y = e.touches[0].clientY - sY;
+        if (Math.abs(x) > Math.abs(y)) { 
+            e.preventDefault(); 
+            card.style.transform = `translateX(${x}px) rotate(${x/20}deg) ${card.classList.contains('flipped')?'rotateY(180deg)':''}`; 
+        }
+    };
+
     zone.ontouchend = e => {
+        if (e.target.closest('.voice-btn')) return;
         let dX = e.changedTouches[0].clientX - sX, dT = Date.now() - sT;
-        if (dT < 250 && Math.abs(dX) < 10) { 
-            // Клік по кнопці звуку не має перевертати карту
-            if (!e.target.closest('.voice-btn')) {
-                card.style.transition = '0.6s'; 
-                card.classList.toggle('flipped'); 
-            }
+        
+        // Якщо це був просто короткий тап (не свайп)
+        if (dT < 250 && Math.abs(dX) < 15) { 
+            card.style.transition = '0.6s'; 
+            card.classList.toggle('flipped'); 
             return; 
         }
-        if (Math.abs(dX) > 120) handleFlipResult(dX > 0);
-        else { card.style.transition = '0.4s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; }
+        
+        // Якщо це був свайп вбік
+        if (Math.abs(dX) > 120) {
+            handleFlipResult(dX > 0);
+        } else { 
+            card.style.transition = '0.4s'; 
+            card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; 
+        }
     };
 }
 
