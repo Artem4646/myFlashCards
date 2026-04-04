@@ -463,10 +463,6 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
             border-color: rgba(0, 0, 0, 0.05);
         }
-
-            body.light-theme .btn-main.secondary {
-                        background: #f5898975;
-            }
         
         /* Subtle glow based on card side */
         .card-scene::before {
@@ -605,3 +601,7 @@
         .study-controls {
             display: flex;
         }
+
+            .wrong {
+            background: #f5898975;
+            }
