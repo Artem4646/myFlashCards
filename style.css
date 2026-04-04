@@ -28,9 +28,8 @@
         body.light-theme {
             --bg: #f9fafb;
             --surface: rgba(255, 255, 255, 0.8);
-            --surface-h: rgba(255, 132, 132, 0.6);
+            --surface-h: rgba(243, 244, 246, 0.9);
             --text: #111827;
-            --success: #f5898975;
             --muted: #6b7280;
             --border: rgba(0, 0, 0, 0.05);
             --glass-border: rgba(0, 0, 0, 0.06);
