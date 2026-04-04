@@ -138,7 +138,7 @@ async function loadCards() {
                 </div>
             </div>`;
         });
-    } catch (e) { console.warn("Сортування ще не активоване або картки старі."); }
+    } catch (e) { console.warn("Сортування ще не активоване."); }
 }
 
 async function addCard() {
@@ -202,9 +202,7 @@ function setSide(s) {
 function startMode(m, useMistakes = false) {
     let base = useMistakes ? [...currentMistakes] : [...deck];
     if (base.length < 1) return alert("Додай слова!");
-    
     studyQueue = (side === 'rand') ? [...base].sort(() => 0.5 - Math.random()) : [...base];
-    
     currentMode = m; idx = 0; currentMistakes = [];
     document.getElementById('study-menu').style.display = 'none';
     document.getElementById('study-area').style.display = 'block';
@@ -237,10 +235,8 @@ function renderStep() {
     let questionText = answerIsDef ? card.term : card.def;
     let answerText = answerIsDef ? card.def : card.term;
     
-    // Покращена кнопка озвучки з блокуванням перегортання
-    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" 
-        onclick="event.preventDefault(); event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}');" 
-        style="margin-left:12px; font-size:1.5rem; vertical-align:middle; cursor:pointer; position:relative; z-index:10;">🔊</button>`;
+    // Кнопка озвучки з блокуванням спливання події
+    const voiceBtnHtml = (text) => `<button class="btn-icon voice-btn" onclick="event.stopPropagation(); speak('${text.replace(/'/g, "\\'")}')" style="margin-left:10px; font-size:1.3rem; vertical-align:middle; cursor:pointer;">🔊</button>`;
     
     let displayQuestion = answerIsDef ? `${questionText} ${voiceBtnHtml(card.term)}` : questionText;
     let displayAnswer = !answerIsDef ? `${answerText} ${voiceBtnHtml(card.term)}` : answerText;
@@ -252,14 +248,8 @@ function renderStep() {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone">
                 <div class="card-inner" id="card-obj" onclick="if(!event.target.closest('.voice-btn')) this.classList.toggle('flipped')">
-                    <div class="card-face">
-                        <div class="card-label">Питання</div>
-                        <div style="font-size:1.5rem; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 10px;">${displayQuestion}</div>
-                    </div>
-                    <div class="card-back card-face">
-                        <div class="card-label">Відповідь</div>
-                        <div style="font-size:1.5rem; font-weight:bold; display:flex; align-items:center; justify-content:center; text-align:center; padding:0 10px;">${displayAnswer}</div>
-                    </div>
+                    <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px;">${displayQuestion}</div></div>
+                    <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px;">${displayAnswer}</div></div>
                 </div>
             </div>
             <div class="study-controls">${backBtn}<div class="flip-btns">
@@ -271,7 +261,7 @@ function renderStep() {
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2 style="display:flex; align-items:center; justify-content:center;">${displayQuestion}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
                 <input type="text" id="q-input" class="input-ans" placeholder="Введіть переклад..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault(); checkWrite('${safeAns}');}">
                 <div class="study-controls">${backBtn}<button class="btn-main" onclick="checkWrite('${safeAns}')">Перевірити</button></div>`;
             setTimeout(() => document.getElementById('q-input')?.focus(), 200);
@@ -279,7 +269,7 @@ function renderStep() {
             const pool = deck.map(d => answerIsDef ? d.def : d.term);
             let opts = [answerText, ...pool.filter(v => v !== answerText).sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'🧠 Вибір'} ${idx+1}/${studyQueue.length}</p>
-                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2 style="display:flex; align-items:center; justify-content:center;">${displayQuestion}</h2></div>
+                <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); text-align:center; margin-bottom:20px;"><h2>${displayQuestion}</h2></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px">
                     ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${safeAns}')">${o}</button>`).join('')}
                 </div><div class="study-controls">${backBtn}</div>`;
@@ -339,7 +329,14 @@ function initSwipe() {
     };
     zone.ontouchend = e => {
         let dX = e.changedTouches[0].clientX - sX, dT = Date.now() - sT;
-        if (dT < 250 && Math.abs(dX) < 10) { card.style.transition = '0.6s'; card.classList.toggle('flipped'); return; }
+        if (dT < 250 && Math.abs(dX) < 10) { 
+            // Клік по кнопці звуку не має перевертати карту
+            if (!e.target.closest('.voice-btn')) {
+                card.style.transition = '0.6s'; 
+                card.classList.toggle('flipped'); 
+            }
+            return; 
+        }
         if (Math.abs(dX) > 120) handleFlipResult(dX > 0);
         else { card.style.transition = '0.4s'; card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; }
     };
