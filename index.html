@@ -2,1128 +2,116 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>FlashCloud Ultimate</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+          rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
-    <style>
-
-        :root {
-
-            /* New Sophisticated Dark Palette */
-
-            --bg: #030712;
-
-            --surface: rgba(17, 24, 39, 0.7);
-
-            --surface-h: rgba(31, 41, 55, 0.9);
-
-            --text: #f3f4f6;
-
-            --muted: #9ca3af;
-
-            
-
-            /* Neon Gradient Accent */
-
-            --accent-start: #6366f1;
-
-            --accent-end: #a855f7;
-
-            --accent: linear-gradient(135deg, var(--accent-start) 0%, var(--accent-end) 100%);
-
-            --accent-solid: #818cf8;
-
-            
-
-            --border: rgba(255, 255, 255, 0.06);
-
-            --glass-border: rgba(255, 255, 255, 0.08);
-
-            
-
-            --danger: #ef4444;
-
-            --danger-glow: rgba(239, 68, 68, 0.3);
-
-            --success: #10b981;
-
-            --success-glow: rgba(16, 185, 129, 0.3);
-
-            
-
-            --radius-lg: 28px;
-
-            --radius-md: 18px;
-
-            --radius-sm: 12px;
-
-            
-
-            --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-
-            --shadow-neon: 0 0 15px -1px rgba(99, 102, 241, 0.3);
-
-            
-
-            --font: 'Plus Jakarta Sans', sans-serif;
-
-        }
-
-
-
-        body.light-theme {
-
-            --bg: #f9fafb;
-
-            --surface: rgba(255, 255, 255, 0.8);
-
-            --surface-h: rgba(243, 244, 246, 0.9);
-
-            --text: #111827;
-
-            --muted: #6b7280;
-
-            --border: rgba(0, 0, 0, 0.05);
-
-            --glass-border: rgba(0, 0, 0, 0.06);
-
-            --shadow-card: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
-
-            --shadow-neon: 0 0 15px -1px rgba(99, 102, 241, 0.1);
-
-        }
-
-
-
-        * { 
-
-            box-sizing: border-box; 
-
-            margin: 0; 
-
-            padding: 0; 
-
-            font-family: var(--font); 
-
-            -webkit-tap-highlight-color: transparent; 
-
-            outline: none;
-
-        }
-
-        
-
-        body { 
-
-            background: var(--bg); 
-
-            background-image: 
-
-                radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.15), transparent 40%),
-
-                radial-gradient(circle at 90% 90%, rgba(168, 85, 247, 0.15), transparent 40%);
-
-            color: var(--text); 
-
-            padding-bottom: 120px; 
-
-            min-height: 100vh; 
-
-            transition: background 0.4s, color 0.4s; 
-
-            overflow-x: hidden; 
-
-            letter-spacing: -0.01em;
-
-        }
-
-
-
-        /* Typography */
-
-        h1, h2, h3 { font-weight: 800; letter-spacing: -0.03em; }
-
-        h2 { font-size: 1.75rem; margin-bottom: 0.5rem; }
-
-        p { color: var(--muted); line-height: 1.5; }
-
-
-
-        /* Header */
-
-        header { 
-
-            max-width: 600px; 
-
-            margin: 0 auto; 
-
-            padding: 20px; 
-
-            display: flex; 
-
-            justify-content: space-between; 
-
-            align-items: center; 
-
-            position: sticky; 
-
-            top: 0; 
-
-            z-index: 100;
-
-            backdrop-filter: blur(10px);
-
-            -webkit-backdrop-filter: blur(10px);
-
-            background: rgba(3, 7, 18, 0.5);
-
-        }
-
-        body.light-theme header { background: rgba(249, 250, 251, 0.5); }
-
-
-
-        .logo { 
-
-            font-size: 1.5rem; 
-
-            font-weight: 800; 
-
-            background: var(--accent); 
-
-            -webkit-background-clip: text; 
-
-            -webkit-text-fill-color: transparent; 
-
-            letter-spacing: -0.04em;
-
-        }
-
-        
-
-        /* Navigation */
-
-        .nav-bar { 
-
-            position: fixed; 
-
-            bottom: 30px; 
-
-            left: 50%; 
-
-            transform: translateX(-50%); 
-
-            width: calc(100% - 40px); 
-
-            max-width: 400px; 
-
-            background: var(--surface); 
-
-            padding: 8px; 
-
-            border-radius: 200px; 
-
-            border: 1px solid var(--glass-border); 
-
-            display: none; 
-
-            gap: 5px; 
-
-            box-shadow: var(--shadow-card); 
-
-            z-index: 1000; 
-
-            backdrop-filter: blur(20px);
-
-            -webkit-backdrop-filter: blur(20px);
-
-        }
-
-        .nav-btn { 
-
-            flex: 1; 
-
-            padding: 14px 10px; 
-
-            border-radius: 200px; 
-
-            border: none; 
-
-            background: transparent; 
-
-            color: var(--muted); 
-
-            font-weight: 700; 
-
-            font-size: 0.85rem; 
-
-            cursor: pointer; 
-
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-
-            display: flex;
-
-            justify-content: center;
-
-            align-items: center;
-
-            gap: 8px;
-
-        }
-
-        .nav-btn i { font-size: 1.1rem; }
-
-        .nav-btn.active { 
-
-            background: var(--surface-h); 
-
-            color: var(--text); 
-
-            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
-
-        }
-
-        body.light-theme .nav-btn.active {
-
-            box-shadow: inset 0 1px 1px rgba(0,0,0,0.02), 0 2px 5px rgba(0,0,0,0.05);
-
-        }
-
-
-
-        /* Screens & Layout */
-
-        .screen { 
-
-            display: none; 
-
-            width: 100%; 
-
-            max-width: 600px; 
-
-            margin: 0 auto; 
-
-            padding: 20px; 
-
-            animation: fadeIn slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1); 
-
-        }
-
-        .screen.active { display: block; }
-
-
-
-        @keyframes slideUp { from { transform: translateY(20px); } to { transform: translateY(0); } }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-
-
-        .section-header {
-
-            margin-bottom: 25px;
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-        }
-
-
-
-        /* Inputs */
-
-        .input-group { margin-bottom: 15px; }
-
-        .input-ans { 
-
-            width: 100%; 
-
-            padding: 16px 20px; 
-
-            border-radius: var(--radius-md); 
-
-            border: 1px solid var(--border); 
-
-            background: var(--surface); 
-
-            color: var(--text); 
-
-            font-size: 1rem; 
-
-            font-weight: 500;
-
-            transition: 0.3s; 
-
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-
-        }
-
-        .input-ans:focus { 
-
-            border-color: var(--accent-solid); 
-
-            background: var(--surface-h);
-
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 0 0 3px rgba(99, 102, 241, 0.1);
-
-        }
-
-        .input-ans.correct { 
-
-            border-color: var(--success); 
-
-            background-color: rgba(16, 185, 129, 0.1);
-
-            color: var(--success);
-
-        }
-
-        .input-ans.wrong { 
-
-            border-color: var(--danger); 
-
-            background-color: rgba(239, 68, 68, 0.1);
-
-            color: var(--danger);
-
-        }
-
-
-
-        /* Buttons */
-
-        .btn-main { 
-
-            width: 100%; 
-
-            padding: 16px 20px; 
-
-            background: var(--accent); 
-
-            color: white; 
-
-            border: none; 
-
-            border-radius: var(--radius-md); 
-
-            font-weight: 700; 
-
-            font-size: 1rem; 
-
-            cursor: pointer; 
-
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-
-            display: flex; 
-
-            align-items: center; 
-
-            justify-content: center; 
-
-            gap: 10px; 
-
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-
-            position: relative;
-
-            overflow: hidden;
-
-        }
-
-        .btn-main::after {
-
-            content: '';
-
-            position: absolute;
-
-            inset: 0;
-
-            background: linear-gradient(rgba(255,255,255,0.1), transparent);
-
-            opacity: 0;
-
-            transition: 0.3s;
-
-        }
-
-        .btn-main:hover::after { opacity: 1; }
-
-        .btn-main:active { 
-
-            transform: translateY(1px) scale(0.98); 
-
-            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
-
-        }
-
-        
-
-        .btn-main.secondary { 
-
-            background: var(--surface-h); 
-
-            color: var(--text); 
-
-            box-shadow: none; 
-
-            border: 1px solid var(--border); 
-
-        }
-
-        .btn-main.secondary:active { background: var(--surface); border-color: var(--glass-border); }
-
-
-
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); box-shadow: none;}
-
-        .btn-danger:active { background: rgba(239, 68, 68, 0.2); }
-
-
-
-        .btn-icon {
-
-            width: 45px; height: 45px;
-
-            border-radius: 50%;
-
-            display: flex; justify-content: center; align-items: center;
-
-            background: var(--surface); border: 1px solid var(--border);
-
-            color: var(--muted); cursor: pointer; transition: 0.3s;
-
-            font-size: 1.1rem;
-
-        }
-
-        .btn-icon:hover { background: var(--surface-h); color: var(--text); border-color: var(--glass-border); }
-
-
-
-        /* Item Rows */
-
-        .item-list { display: flex; flex-direction: column; gap: 10px; }
-
-        .item-row { 
-
-            background: var(--surface); 
-
-            padding: 16px 20px; 
-
-            border-radius: var(--radius-md); 
-
-            border: 1px solid var(--border); 
-
-            display: flex; 
-
-            justify-content: space-between; 
-
-            align-items: center; 
-
-            transition: 0.3s;
-
-            animation: fadeIn 0.4s ease;
-
-        }
-
-        .item-row:hover { 
-
-            border-color: rgba(255,255,255,0.12);
-
-            background: var(--surface-h);
-
-            transform: translateY(-2px);
-
-        }
-
-        body.light-theme .item-row { box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-
-        body.light-theme .item-row:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-
-
-
-        /* Side Picker */
-
-        .side-picker { 
-
-            background: var(--surface); 
-
-            padding: 5px; 
-
-            border-radius: 200px; 
-
-            margin-bottom: 25px; 
-
-            display: flex; 
-
-            gap: 2px; 
-
-            border: 1px solid var(--border);
-
-        }
-
-        .side-option { 
-
-            flex: 1; 
-
-            padding: 12px; 
-
-            border-radius: 200px; 
-
-            cursor: pointer; 
-
-            text-align: center; 
-
-            font-size: 0.85rem; 
-
-            font-weight: 700; 
-
-            color: var(--muted); 
-
-            transition: 0.3s; 
-
-        }
-
-        .side-option.active { 
-
-            background: var(--accent); 
-
-            color: white; 
-
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2);
-
-        }
-
-
-
-        /* Study Grid */
-
-        .study-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-        .study-card { 
-
-            background: var(--surface); 
-
-            padding: 30px 20px; 
-
-            border-radius: var(--radius-lg); 
-
-            border: 1px solid var(--border); 
-
-            display: flex; 
-
-            flex-direction: column; 
-
-            align-items: center; 
-
-            gap: 15px; 
-
-            transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
-
-            cursor: pointer; 
-
-            text-align: center;
-
-            box-shadow: var(--shadow-card);
-
-        }
-
-        .study-card:hover { 
-
-            border-color: var(--accent-solid);
-
-            transform: translateY(-5px) scale(1.02);
-
-            background: var(--surface-h);
-
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), var(--shadow-neon);
-
-        }
-
-        .study-card span { font-size: 2.5rem; filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5)); }
-
-        .study-card b { font-weight: 700; font-size: 1.1rem; color: var(--text); }
-
-
-
-        /* FLIP CARD VISUALS */
-
-        .card-scene { 
-
-            width: 100%; 
-
-            height: 380px; 
-
-            perspective: 1500px; 
-
-            margin-bottom: 30px; 
-
-            position: relative;
-
-        }
-
-        .card-inner { 
-
-            width: 100%; 
-
-            height: 100%; 
-
-            position: relative; 
-
-            transform-style: preserve-3d; 
-
-            transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); 
-
-            cursor: pointer; 
-
-            border-radius: var(--radius-lg);
-
-        }
-
-        .card-inner.flipped { transform: rotateY(180deg); }
-
-
-
-        .card-face { 
-
-            position: absolute; 
-
-            inset: 0; 
-
-            backface-visibility: hidden; 
-
-            -webkit-backface-visibility: hidden;
-
-            border-radius: var(--radius-lg); 
-
-            display: flex; 
-
-            flex-direction: column;
-
-            align-items: center; 
-
-            justify-content: center; 
-
-            padding: 40px; 
-
-            background: #111827; /* Solid color for backface visibility fix */
-
-            text-align: center; 
-
-            font-size: 2.2rem; 
-
-            font-weight: 800; 
-
-            border: 2px solid var(--glass-border); 
-
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05);
-
-            letter-spacing: -0.04em;
-
-            color: var(--text);
-
-        }
-
-        body.light-theme .card-face { 
-
-            background: white; 
-
-            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
-
-            border-color: rgba(0,0,0,0.05);
-
-        }
-
-
-
-        /* Subtle glow based on card side */
-
-        .card-scene::before {
-
-            content: ''; position: absolute; inset: 20px;
-
-            border-radius: var(--radius-lg);
-
-            background: var(--accent);
-
-            filter: blur(50px); opacity: 0.15; transition: 0.5s; z-index: -1;
-
-        }
-
-
-
-        .card-inner:not(.flipped) .card-face:not(.card-back) {
-
-            border-color: rgba(168, 85, 247, 0.2);
-
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 15px rgba(168, 85, 247, 0.15);
-
-        }
-
-
-
-        .card-back { 
-
-            transform: rotateY(180deg); 
-
-            background: var(--accent); 
-
-            color: white; 
-
-            border: none; 
-
-            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.3);
-
-        }
-
-        .card-back .card-label { color: rgba(255,255,255,0.7); }
-
-
-
-        .card-label {
-
-            font-size: 0.75rem;
-
-            font-weight: 700;
-
-            text-transform: uppercase;
-
-            letter-spacing: 0.1em;
-
-            color: var(--muted);
-
-            margin-bottom: 15px;
-
-            position: absolute;
-
-            top: 30px;
-
-        }
-
-
-
-        /* Modal / Popup */
-
-        #modal-overlay { 
-
-            position: fixed; 
-
-            inset: 0; 
-
-            background: rgba(0, 3, 10, 0.8); 
-
-            display: none; 
-
-            align-items: center; 
-
-            justify-content: center; 
-
-            z-index: 3000; 
-
-            backdrop-filter: blur(15px);
-
-            -webkit-backdrop-filter: blur(15px);
-
-            padding: 20px;
-
-        }
-
-        .modal { 
-
-            background: #111827;
-
-            padding: 35px; 
-
-            border-radius: var(--radius-lg); 
-
-            width: 100%; 
-
-            max-width: 400px; 
-
-            text-align: center; 
-
-            border: 1px solid var(--glass-border); 
-
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-
-            animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-
-        }
-
-        @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-
-
-
-        /* Mobile Optimization for Flip Buttons */
-
-        @media (max-width: 768px) {
-
-            .flip-btns {
-
-                position: fixed;
-
-                bottom: 190px; /* Above nav bar */
-
-                left: 20px; right: 20px;
-
-                display: flex; gap: 10px;
-
-                z-index: 900;
-                /* width: inherit; */
-
-            }
-
-            .flip-btns .btn-main { padding: 10px; font-size: 1.2rem; }
-            .btn-main{padding: 12px;}
-
-            #scr-study #study-area { padding-bottom: 80px; }
-
-            .card-scene { height: 250px; }
-
-            .nav-btn {
-                padding: 8px 0px;
-            }
-        }
-
-
-
-        /* Scrollbar */
-
-        ::-webkit-scrollbar { width: 8px; }
-
-        ::-webkit-scrollbar-track { background: transparent; }
-
-        ::-webkit-scrollbar-thumb { background: var(--surface-h); border-radius: 4px; }
-
-        ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-        .study-controls{
-            display: flex;
-            /* gap: 10px; */
-        }
-
-    </style>
-
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-
-
 <div id="modal-overlay">
-
     <div class="modal">
-
         <h3 id="m-title"></h3>
-
         <p id="m-body"></p>
-
         <div id="m-content"></div>
-
         <div id="m-btns" style="display:flex; gap:10px; margin-top:25px;"></div>
-
     </div>
-
 </div>
-
-
 
 <header>
-
     <div class="logo">FLASHCLOUD</div>
-
     <div style="display:flex; gap:10px">
-
         <button class="btn-icon" onclick="toggleTheme()"><i class="ph-duotone ph-moon-stars">🌓</i></button>
-
-        <button id="logout-btn" class="btn-icon btn-danger" style="display:none" onclick="auth.signOut()"><i class="ph-bold ph-sign-out">🚪</i></button>
-
+        <button id="logout-btn" class="btn-icon btn-danger" style="display:none" onclick="auth.signOut()"><i
+                class="ph-bold ph-sign-out">🚪</i></button>
     </div>
-
 </header>
 
-
-
 <div id="scr-auth" class="screen active">
-
     <div style="text-align:center; padding-top:40px; max-width: 360px; margin: 0 auto;">
-
         <span>👋</span>
-
         <h2>Вітаємо знову</h2>
-
         <p style="margin-bottom: 30px;">Продовжуй своє навчання у FlashCloud Ultimate</p>
-
-        
-
         <div class="input-group">
-
             <input type="email" id="email" class="input-ans" placeholder="твоя пошта">
-
         </div>
-
         <div class="input-group">
-
             <input type="password" id="pass" class="input-ans" placeholder="пароль">
-
         </div>
-
-        
-
         <button class="btn-main" id="auth-submit-btn" onclick="handleAuth()">Продовжити</button>
-
-        
-
         <p style="margin-top: 25px; font-size: 0.9rem;">
-
-            <span id="auth-switch-text">Ще немає акаунта?</span> 
-
-            <a href="#" id="auth-switch-link" style="color: var(--accent-solid); font-weight: 700; text-decoration: none;" onclick="toggleAuthMode()">Створити</a>
-
+            <span id="auth-switch-text">Ще немає акаунта?</span>
+            <a href="#" id="auth-switch-link"
+               style="color: var(--accent-solid); font-weight: 700; text-decoration: none;" onclick="toggleAuthMode()">Створити</a>
         </p>
-
     </div>
-
 </div>
-
-
-
 <div id="scr-folders" class="screen">
-
     <div class="section-header">
-
         <div>
-
             <h2>Твої модулі</h2>
-
             <p>Вибирай модуль, щоб почати</p>
-
         </div>
-
-        <button class="btn-main" style="width:auto; padding:12px 20px; border-radius: 200px;" onclick="uiAddFolder()">+ Створити</button>
-
+        <button class="btn-main" style="width:auto; padding:12px 20px; border-radius: 200px;" onclick="uiAddFolder()">+
+            Створити
+        </button>
     </div>
-
     <div id="folders-list" class="item-list"></div>
-
 </div>
-
-
-
 <div id="scr-editor" class="screen">
-
     <div class="section-header">
-
         <div>
-
             <p style="margin-bottom:0;">Редактор модуля</p>
-
             <h2 id="editor-title">Слова</h2>
-
         </div>
-
     </div>
-
-    
-
     <div style="background:var(--surface); padding:20px; border-radius:var(--radius-lg); margin-bottom:25px; border:1px solid var(--border); box-shadow: var(--shadow-card);">
-
         <div class="input-group">
-
             <input type="text" id="in-w" class="input-ans" placeholder="Термін (напр., Apple)">
-
         </div>
-
         <div class="input-group">
-
             <input type="text" id="in-t" class="input-ans" placeholder="Переклад (напр., Яблуко)">
-
         </div>
-
         <button class="btn-main secondary" onclick="addCard()">Додати картку</button>
-
     </div>
-
     <div id="cards-list" class="item-list"></div>
-
 </div>
-
-
-
 <div id="scr-study" class="screen">
-
     <div id="study-menu">
-
         <div class="section-header">
-
             <div>
-
                 <p style="margin-bottom:0;">Навчання</p>
-
                 <h2 id="study-title">Вибери режим</h2>
-
             </div>
-
         </div>
-
-        
-
         <div class="side-picker">
-
             <div class="side-option active" id="s-term" onclick="setSide('term')">Термін</div>
-
             <div class="side-option" id="s-def" onclick="setSide('def')">Переклад</div>
-
             <div class="side-option" id="s-rand" onclick="setSide('rand')">Рандом</div>
-
         </div>
-
-        
-
         <div class="study-grid">
-
             <div class="study-card" onclick="startMode('flip')"><span>🃏</span><b>Картки</b></div>
-
             <div class="study-card" onclick="startMode('learn')"><span>🧠</span><b>Вибір</b></div>
-
             <div class="study-card" onclick="startMode('write')"><span>⌨️</span><b>Письмо</b></div>
-
             <div class="study-card" onclick="startMode('test')"><span>📝</span><b>Тест</b></div>
-
         </div>
-
     </div>
-
     <div id="study-area" style="display:none">
-
         <div id="mode-container"></div>
-
     </div>
-
 </div>
-
-
-
 <nav id="nav-container" class="nav-bar">
-
     <button id="n-folders" class="nav-btn" onclick="nav('folders')"><i>📚</i>Модулі</button>
-
     <button id="n-editor" class="nav-btn" onclick="nav('editor')"><i>✏️</i>Слова</button>
-
     <button id="n-study" class="nav-btn" onclick="nav('study')"><i>🧠</i>Вчити</button>
-
 </nav>
 </head>
 <body>
-
 <div id="modal-overlay">
     <div class="modal">
         <h3 id="m-title"></h3>
@@ -1138,19 +126,20 @@
         <span>👋</span>
         <h2>Вітаємо знову</h2>
         <p style="margin-bottom: 30px;">Продовжуй своє навчання у FlashCloud Ultimate</p>
-        
+
         <div class="input-group">
             <input type="email" id="email" class="input-ans" placeholder="твоя пошта">
         </div>
         <div class="input-group">
             <input type="password" id="pass" class="input-ans" placeholder="пароль">
         </div>
-        
+
         <button class="btn-main" id="auth-submit-btn" onclick="handleAuth()">Продовжити</button>
-        
+
         <p style="margin-top: 25px; font-size: 0.9rem;">
-            <span id="auth-switch-text">Ще немає акаунта?</span> 
-            <a href="#" id="auth-switch-link" style="color: var(--accent-solid); font-weight: 700; text-decoration: none;" onclick="toggleAuthMode()">Створити</a>
+            <span id="auth-switch-text">Ще немає акаунта?</span>
+            <a href="#" id="auth-switch-link"
+               style="color: var(--accent-solid); font-weight: 700; text-decoration: none;" onclick="toggleAuthMode()">Створити</a>
         </p>
     </div>
 </div>
@@ -1161,7 +150,9 @@
             <h2>Твої модулі</h2>
             <p>Вибирай модуль, щоб почати</p>
         </div>
-        <button class="btn-main" style="width:auto; padding:12px 20px; border-radius: 200px;" onclick="uiAddFolder()">+ Створити</button>
+        <button class="btn-main" style="width:auto; padding:12px 20px; border-radius: 200px;" onclick="uiAddFolder()">+
+            Створити
+        </button>
     </div>
     <div id="folders-list" class="item-list"></div>
 </div>
@@ -1173,7 +164,7 @@
             <h2 id="editor-title">Слова</h2>
         </div>
     </div>
-    
+
     <div style="background:var(--surface); padding:20px; border-radius:var(--radius-lg); margin-bottom:25px; border:1px solid var(--border); box-shadow: var(--shadow-card);">
         <div class="input-group">
             <input type="text" id="in-w" class="input-ans" placeholder="Термін (напр., Apple)">
@@ -1194,13 +185,13 @@
                 <h2 id="study-title">Вибери режим</h2>
             </div>
         </div>
-        
+
         <div class="side-picker">
             <div class="side-option active" id="s-term" onclick="setSide('term')">Термін</div>
             <div class="side-option" id="s-def" onclick="setSide('def')">Переклад</div>
             <div class="side-option" id="s-rand" onclick="setSide('rand')">Рандом</div>
         </div>
-        
+
         <div class="study-grid">
             <div class="study-card" onclick="startMode('flip')"><span>🃏</span><b>Картки</b></div>
             <div class="study-card" onclick="startMode('learn')"><span>🧠</span><b>Вибір</b></div>
@@ -1219,429 +210,6 @@
     <button id="n-study" class="nav-btn" onclick="nav('study')"><i>🧠</i>Вчити</button>
 </nav>
 
-<script>
-    // --- FIREBASE CONFIG ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyDmgEKwNIUnXrvUsn6OTzjWBI_MIegPCHk",
-        authDomain: "pet-project-90af1.firebaseapp.com",
-        projectId: "pet-project-90af1",
-        storageBucket: "pet-project-90af1.firebasestorage.app",
-        messagingSenderId: "408900485418",
-        appId: "1:408900485418:web:450d1665212044352e9e53"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(), db = firebase.firestore();
-    
-    // --- STATE ---
-    let curFid = null, deck = [], studyQueue = [], mistakes = [], currentMistakes = [], idx = 0, currentMode = '', side = 'term', startX = 0;
-    let isLoginMode = true;
-
-    // --- AUTH LOGIC ---
-    auth.onAuthStateChanged(user => {
-        if(user) { 
-            document.getElementById('nav-container').style.display = 'flex'; 
-            document.getElementById('logout-btn').style.display = 'flex'; 
-            nav('folders'); 
-        }
-        else { 
-            document.getElementById('nav-container').style.display = 'none'; 
-            document.getElementById('logout-btn').style.display = 'none'; 
-            showScreen('scr-auth'); 
-        }
-    });
-
-    function toggleAuthMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? "З поверненням!" : "Створити акаунт";
-        document.getElementById('auth-submit-btn').innerText = isLoginMode ? "Увійти" : "Зареєструватися";
-        document.getElementById('auth-switch-text').innerText = isLoginMode ? "Ще немає акаунта?" : "Вже є акаунт?";
-        document.getElementById('auth-switch-link').innerText = isLoginMode ? "Створити" : "Увійти";
-    }
-
-    async function handleAuth() {
-        const e = document.getElementById('email').value.trim(), p = document.getElementById('pass').value.trim();
-        if(!e || !p) return alert("Заповни всі поля, будь ласка");
-        try { if(isLoginMode) await auth.signInWithEmailAndPassword(e, p); else await auth.createUserWithEmailAndPassword(e, p); }
-        catch(err) { alert(err.message); }
-    }
-
-    // --- FOLDERS ---
-    async function loadFolders() {
-    // Додаємо try-catch, щоб одна помилка не "вішала" весь додаток
-    try {
-        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').orderBy('createdAt', 'desc').get();
-        const list = document.getElementById('folders-list'); 
-        list.innerHTML = '';
-
-        if(snap.empty) {
-            list.innerHTML = `<div style="text-align:center; padding: 40px; color:var(--muted)">Натисни "+ Створити", щоб додати перший модуль</div>`;
-            return;
-        }
-
-        snap.forEach(doc => {
-            const d = doc.data();
-            
-            // ПЕРЕВІРКА ДАТИ: Якщо метод toDate існує — малюємо дату, якщо ні — пишемо "Щойно"
-            const dateDisplay = (d.createdAt && d.createdAt.toDate) 
-                ? d.createdAt.toDate().toLocaleDateString() 
-                : "Створення...";
-
-            list.innerHTML += `<div class="item-row" onclick="selectFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}')">
-                <div>
-                    <b style="font-size:1.1rem">${d.name}</b>
-                    <div style="font-size:0.8rem; color:var(--muted); margin-top:4px">${dateDisplay}</div>
-                </div>
-                <div style="display:flex; gap:10px" onclick="event.stopPropagation()">
-                    <button class="btn-icon" onclick="uiRenameFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}', event)">✏️</button>
-                    <button class="btn-icon btn-danger" onclick="uiDeleteFolder('${doc.id}', '${d.name.replace(/'/g, "\\'")}', event)">🗑️</button>
-                </div>
-            </div>`;
-        });
-    } catch (err) {
-        console.error("Помилка при завантаженні папок:", err);
-    }
-}
-
-    function uiAddFolder() {
-        const name = prompt("Введіть назву модуля:")?.trim();
-        if(name) {
-            db.collection('users').doc(auth.currentUser.uid).collection('folders').add({
-                name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            setTimeout(loadFolders, 500);
-        }
-    }
-
-    function uiRenameFolder(fid, oldName, e) {
-        e.stopPropagation();
-        const newName = prompt("Нова назва модуля:", oldName)?.trim();
-        if(newName && newName !== oldName) {
-            db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(fid).update({name: newName});
-            setTimeout(loadFolders, 500);
-        }
-    }
-
-    async function uiDeleteFolder(fid, name, e) {
-        e.stopPropagation();
-        if(confirm(`Справді видалити модуль "${name}"? Усі слова в ньому зникнуть.`)) {
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(fid).delete();
-            loadFolders();
-        }
-    }
-
-    async function selectFolder(id, name) {
-        curFid = id; 
-        document.getElementById('editor-title').innerText = name; 
-        document.getElementById('study-title').innerText = name;
-        await loadCards(); 
-        nav('study');
-    }
-
-    // --- EDITOR ---
-    async function loadCards() {
-        if(!curFid) return;
-        const snap = await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').get();
-        deck = []; snap.forEach(doc => deck.push({id: doc.id, ...doc.data()}));
-        const list = document.getElementById('cards-list'); list.innerHTML = '';
-        
-        const count = deck.length;
-        document.querySelector('#n-editor').innerHTML = `<i>✏️</i>Слова (${count})`;
-
-        if(deck.length === 0) {
-            list.innerHTML = `<div style="text-align:center; padding: 30px; color:var(--muted)">У цьому модулі ще немає слів. Додай перше!</div>`;
-            return;
-        }
-
-        deck.forEach(c => {
-            list.innerHTML += `<div class="item-row">
-                <div style="flex:1; font-weight:500"><b style="color:var(--accent-solid)">${c.term}</b> <span style="color:var(--muted); margin: 0 8px">→</span> ${c.def}</div>
-                <div style="display:flex; gap:8px" onclick="event.stopPropagation()">
-                    <button class="btn-icon" style="width:35px; height:35px; font-size:0.9rem" onclick="uiEditCard('${c.id}', '${c.term.replace(/'/g, "\\'")}', '${c.def.replace(/'/g, "\\")}')">✏️</button>
-                    <button class="btn-icon btn-danger" style="width:35px; height:35px; font-size:0.9rem" onclick="uiDeleteCard('${c.id}')">🗑️</button>
-                </div>
-            </div>`;
-        });
-    }
-
-    async function addCard() {
-        const t = document.getElementById('in-w'), d = document.getElementById('in-t');
-        const term = t.value.trim(), def = d.value.trim();
-        if(term && def && curFid) {
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').add({term, def});
-            t.value=''; d.value=''; 
-            t.focus();
-            loadCards();
-        } else {
-            alert("Заповни обидва поля");
-        }
-    }
-
-    function uiEditCard(cid, oldT, oldD) {
-        const nt = prompt("Редагувати термін:", oldT)?.trim();
-        const nd = prompt("Редагувати переклад:", oldD)?.trim();
-        if(nt && nd) {
-            db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').doc(cid).update({term: nt, def: nd});
-            setTimeout(loadCards, 500);
-        }
-    }
-
-    async function uiDeleteCard(cid) {
-        if(confirm("Видалити цю картку?")) {
-            await db.collection('users').doc(auth.currentUser.uid).collection('folders').doc(curFid).collection('cards').doc(cid).delete();
-            loadCards();
-        }
-    }
-
-    // --- NAVIGATION ---
-    function nav(s) {
-        if(!curFid && (s==='editor'||s==='study')) return nav('folders');
-        
-        // Update Active State in Nav Bar
-        document.querySelectorAll('.nav-bar .nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('n-'+s)?.classList.add('active');
-        
-        showScreen('scr-'+s);
-        if(s==='folders') loadFolders();
-        if(s==='editor') loadCards();
-        if(s==='study') { 
-            document.getElementById('study-menu').style.display='block'; 
-            document.getElementById('study-area').style.display='none'; 
-        }
-    }
-
-    function showScreen(id) { 
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
-        document.getElementById(id).classList.add('active'); 
-        window.scrollTo(0,0);
-    }
-
-    // --- STUDY CORE ---
-    function setSide(s) { side = s; document.querySelectorAll('.side-option').forEach(o => o.classList.remove('active')); document.getElementById('s-'+s).classList.add('active'); }
-
-    function startMode(m, useMistakes = false) {
-        studyQueue = useMistakes ? [...currentMistakes] : [...deck].sort(() => 0.5 - Math.random());
-        if(studyQueue.length < 1) return alert("Додай хоча б одне слово в модуль!");
-        currentMode = m; idx = 0; currentMistakes = [];
-        document.getElementById('study-menu').style.display = 'none';
-        document.getElementById('study-area').style.display = 'block';
-        renderStep();
-    }
-
-    function renderStep() {
-    const cont = document.getElementById('mode-container');
-    if(idx >= studyQueue.length) {
-        let retryBtn = '';
-        if(currentMistakes.length > 0) {
-            retryBtn = `<button class="btn-main" style="margin-top:15px; background:var(--danger)" onclick="startMode('${currentMode}', true)">🔄 Вчити помилки (${currentMistakes.length})</button>`;
-        }
-        cont.innerHTML = `<div style="text-align:center; padding:50px 0; animation: modalIn 0.4s ease;">
-            <span style="font-size:4rem">🎉</span>
-            <h2 style="margin-top:20px">Чудова робота!</h2>
-            <p>Раунд завершено. Помилок: ${currentMistakes.length}</p>
-            ${retryBtn}
-            <button class="btn-main secondary" style="margin-top:15px" onclick="nav('study')">До меню навчання</button></div>`;
-        return;
-    }
-    
-    const card = studyQueue[idx];
-    let term = card.term, def = card.def;
-
-    const isOriginal = (side === 'term') || (side === 'rand' && Math.random() > 0.5);
-    if(!isOriginal && side !== 'term') [term, def] = [def, term];
-    if(side === 'def') [term, def] = [card.def, card.term];
-
-    // Кнопка "Назад" (відображається тільки якщо ми не на першому кроці)
-    const backBtn = idx > 0 ? `<button class="btn-main btn-back" onclick="prevStep()">⬅️</button>` : `<div></div>`;
-
-    if(currentMode === 'flip') {
-        cont.innerHTML = `
-            <p style="text-align:center; color:var(--muted); margin-bottom:15px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
-            <div class="card-scene" id="swipe-zone">
-                <div class="card-inner" id="card-obj" onclick="if(window.innerWidth > 768) this.classList.toggle('flipped')">
-                    <div class="card-face">
-                        <div class="card-label">Термін</div>
-                        ${term}
-                    </div>
-                    <div class="card-back card-face">
-                        <div class="card-label">Переклад</div>
-                        ${def}
-                    </div>
-                </div>
-            </div>
-            <div class="study-controls">
-                ${backBtn}
-                <div class="flip-btns" style="display:flex; gap:10px;">
-                    <button class="btn-main secondary" style="color:var(--danger); flex:1" onclick="handleFlipResult(false)">❌</button>
-                    <button class="btn-main" style="background:var(--success); flex:1" onclick="handleFlipResult(true)">✅</button>
-                </div>
-            </div>`;
-        initSwipe();
-    } else if(currentMode === 'learn' || currentMode === 'test') {
-        const correctAns = def;
-        const pool = deck.map(d => (side === 'term' ? d.def : d.term));
-        let others = pool.filter(v => v !== correctAns);
-        let opts = [correctAns, ...others.sort(() => 0.5 - Math.random()).slice(0, 3)].sort(() => 0.5 - Math.random());
-        
-        cont.innerHTML = `
-            <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
-            <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
-                <h2 style="font-size:2rem">${term}</h2>
-            </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px">
-                ${opts.map(o => `<button class="btn-main secondary" onclick="checkChoice(this, '${o.replace(/'/g, "\\'")}', '${correctAns.replace(/'/g, "\\")}')">${o}</button>`).join('')}
-            </div>
-            <div class="study-controls">
-                ${backBtn}
-                <div style="flex:1"></div> </div>`;
-    } else {
-        cont.innerHTML = `
-            <p style="text-align:center; color:var(--muted); margin-bottom:10px; font-weight:600">${idx+1} / ${studyQueue.length}</p>
-            <div style="background:var(--surface); padding:40px 20px; border-radius:var(--radius-lg); border:1px solid var(--border); text-align:center; margin-bottom:20px;">
-                <h2 style="font-size:2rem">${term}</h2>
-            </div>
-            <div class="input-group">
-                <input type="text" id="q-input" class="input-ans" placeholder="Твій переклад..." autocomplete="off">
-            </div>
-            <div class="study-controls">
-                ${backBtn}
-                <button class="btn-main" onclick="checkWrite('${def.replace(/'/g, "\\")}')">Перевірити</button>
-            </div>`;
-        setTimeout(() => document.getElementById('q-input')?.focus(), 200);
-    }
-}
-
-    function prevStep() {
-    if (idx > 0) {
-        idx--;
-        // Видаляємо останню помилку з масиву, якщо ми повернулися назад
-        // (це необов'язково, але логічно: якщо користувач повернувся, він хоче перездати)
-        if (currentMistakes.length > 0 && currentMistakes[currentMistakes.length - 1] === studyQueue[idx]) {
-            currentMistakes.pop();
-        }
-        renderStep();
-    }
-}
-
-    // --- STUDY INTERACTIONS ---
-    function checkChoice(btn, user, cor) {
-    if(user === cor) { 
-        btn.style.backgroundColor = 'var(--success)';
-        btn.style.color = 'white';
-        btn.style.borderColor = 'var(--success)';
-        setTimeout(() => { idx++; renderStep(); }, 600); 
-    } else { 
-        currentMistakes.push(studyQueue[idx]);
-        btn.style.backgroundColor = 'var(--danger)';
-        btn.style.color = 'white';
-        btn.style.borderColor = 'var(--danger)';
-        
-        // Підсвічуємо правильну відповідь
-        document.querySelectorAll('#mode-container .btn-main').forEach(b => {
-            if(b.innerText === cor) {
-                b.style.backgroundColor = 'var(--success)';
-                b.style.color = 'white';
-                b.style.borderColor = 'var(--success)';
-            }
-        });
-        setTimeout(() => { idx++; renderStep(); }, 1200); 
-    }
-}
-
-function checkWrite(cor) {
-    const input = document.getElementById('q-input');
-    const val = input.value.trim();
-    if(val.toLowerCase() === cor.trim().toLowerCase()) { 
-        input.classList.add('correct'); // Переконайтеся, що в CSS є клас .correct { border-color: var(--success); }
-        setTimeout(() => { idx++; renderStep(); }, 600); 
-    } else { 
-        currentMistakes.push(studyQueue[idx]);
-        input.classList.add('wrong');
-        input.value = `Помилка. Правильно: ${cor}`;
-        setTimeout(() => { idx++; renderStep(); }, 1500); 
-    }
-}
-
-    // --- FLIP CARD ACTIONS ---
-    function handleFlipResult(known) {
-        if(!known) currentMistakes.push(studyQueue[idx]);
-        const card = document.getElementById('card-obj');
-        if(!card) return;
-        
-        card.style.transition = '0.5s cubic-bezier(0.55, 0, 1, 0.45)';
-        card.style.transform = `translateX(${known ? 400 : -400}px) rotate(${known ? 30 : -30}deg) ${card.classList.contains('flipped') ? 'rotateY(180deg)' : ''}`;
-        card.style.opacity = '0'; 
-        
-        setTimeout(() => { idx++; renderStep(); }, 400);
-    }
-
-    // --- MOBILE SWIPE & FLIP ---
-    function initSwipe() {
-        const zone = document.getElementById('swipe-zone'), card = document.getElementById('card-obj');
-        if(!zone || !card) return;
-
-        let startTime, startX, startY;
-
-        zone.ontouchstart = e => {
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            startTime = new Date().getTime();
-            card.style.transition = '0s';
-        };
-
-        zone.ontouchmove = e => {
-            let x = e.touches[0].clientX - startX;
-            let y = e.touches[0].clientY - startY;
-            
-            // Запобігаємо скролу сторінки, коли рухаємо картку
-            if (Math.abs(x) > Math.abs(y)) {
-                e.preventDefault();
-                let rotY = card.classList.contains('flipped') ? 'rotateY(180deg)' : '';
-                card.style.transform = `translateX(${x}px) rotate(${x/20}deg) ${rotY}`;
-            }
-        };
-
-        zone.ontouchend = e => {
-            let distX = e.changedTouches[0].clientX - startX;
-            let distY = e.changedTouches[0].clientY - startY;
-            let elapsed = new Date().getTime() - startTime;
-
-            // Логіка визначення тапу (кліку) на мобільному
-            if (elapsed < 250 && Math.abs(distX) < 10 && Math.abs(distY) < 10) {
-                card.style.transition = '0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                card.classList.toggle('flipped');
-                return;
-            }
-
-            // Логіка свайпу
-            if(Math.abs(distX) > 120) {
-                handleFlipResult(distX > 0);
-            } else {
-                // Return to center
-                card.style.transition = '0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-                card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : '';
-            }
-        };
-    }
-
-    // --- UTILS ---
-    function openPopup(t, b, cb) {
-        document.getElementById('m-title').innerText = t; 
-        document.getElementById('m-body').innerText = b;
-        const btns = document.getElementById('m-btns'); btns.innerHTML = '';
-        const btn = document.createElement('button'); btn.className="btn-main"; btn.innerText="Зрозуміло";
-        btn.onclick = () => { if(cb) cb(); document.getElementById('modal-overlay').style.display='none'; };
-        btns.appendChild(btn); document.getElementById('modal-overlay').style.display='flex';
-    }
-
-    function toggleTheme() { 
-        document.body.classList.toggle('light-theme'); 
-        localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
-    }
-    
-    // Load saved theme
-    if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
-
-</script>
+<script src="script.js"></script>
 </body>
 </html>
