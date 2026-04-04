@@ -246,7 +246,7 @@ function renderStep() {
     if (currentMode === 'flip') {
         cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${idx+1}/${studyQueue.length}</p>
             <div class="card-scene" id="swipe-zone">
-                <div class="card-inner" id="card-obj">
+                <div class="card-inner" id="card-obj" onclick="flipCard(event)">
                     <div class="card-face"><div class="card-label">Питання</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayQuestion}</div></div>
                     <div class="card-back card-face"><div class="card-label">Відповідь</div><div style="font-size:1.5rem; font-weight:bold; padding: 0 15px; display:flex; align-items:center; justify-content:center;">${displayAnswer}</div></div>
                 </div>
@@ -257,6 +257,7 @@ function renderStep() {
             </div></div>`;
         initSwipe();
     } else {
+        // Код для Test/Write (без змін)
         let isWrite = (currentMode === 'write') || (currentMode === 'test' && Math.random() > 0.5);
         if (isWrite) {
             cont.innerHTML = `<p style="text-align:center; color:var(--muted)">${currentMode==='test'?'📝 ТЕСТ':'⌨️ Письмо'} ${idx+1}/${studyQueue.length}</p>
@@ -345,25 +346,12 @@ function initSwipe() {
         
         card.style.transition = '0.6s'; 
 
-        // Якщо це був тап (короткий час і мала відстань)
-        if (dT < 250 && Math.abs(dX) < 20) { 
-            card.classList.toggle('flipped'); 
-            return; 
-        }
-        
-        // Якщо це був свайп
-        if (Math.abs(dX) > 120) {
+        // Якщо це був довгий свайп вбік
+        if (Math.abs(dX) > 100 && dT > 100) {
             handleFlipResult(dX > 0);
         } else { 
+            // Повертаємо карту в нормальний стан (але зберігаємо flipped, якщо він був)
             card.style.transform = card.classList.contains('flipped') ? 'rotateY(180deg)' : ''; 
-        }
-    };
-
-    // Підтримка кліку мишкою для ПК
-    zone.onclick = e => {
-        if (!e.target.closest('.voice-btn')) {
-            card.style.transition = '0.6s';
-            card.classList.toggle('flipped');
         }
     };
 }
@@ -373,3 +361,14 @@ function toggleTheme() {
     localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
 }
 if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
+
+function flipCard(event) {
+    // Якщо натиснули на кнопку звуку — нічого не робимо (озвучка спрацює сама)
+    if (event.target.closest('.voice-btn')) return;
+
+    const card = document.getElementById('card-obj');
+    if (card) {
+        card.style.transition = '0.6s';
+        card.classList.toggle('flipped');
+    }
+}
