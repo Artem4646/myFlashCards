@@ -490,6 +490,10 @@
             box-shadow: 0 20px 50px rgba(99, 102, 241, 0.3);
         }
 
+            body.light-theme .card-back {
+                        color: black;
+            }
+
         .card-back .card-label {
             color: rgba(255, 255, 255, 0.7);
         }
